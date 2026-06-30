@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>L'Aventure des Révisions – CM1/CM2</title>
+<style>
+  :root{
+    --bg:#F7F6F2; --surface:#FFFFFF; --surface-1:#F0EEE7;
+    --text-primary:#2C2C2A; --text-secondary:#5F5E5A; --text-muted:#888780;
+    --border:#D3D1C7; --accent:#185FA5; --bg-accent:#E6F1FB; --text-accent:#0C447C;
+    --success-bg:#EAF3DE; --success-text:#27500A; --success-border:#639922;
+    --danger-bg:#FCEBEB; --danger-text:#791F1F; --danger-border:#E24B4A;
+    --gold:#C9961F; --gold-bg:#FBF1D8;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; background:var(--bg); color:var(--text-primary);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    display:flex; justify-content:center;
+    padding:calc(20px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) calc(50px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
+    -webkit-text-size-adjust:100%;
+  }
+  .card{
+    width:100%; max-width:640px; background:var(--surface);
+    border:1px solid var(--border); border-radius:16px; padding:22px 22px 26px;
+  }
+  h1{font-size:20px;font-weight:700;margin:0 0 4px;}
+  .subtitle{font-size:14px;color:var(--text-secondary);margin:0 0 18px;line-height:1.5;}
+  button{
+    font-family:inherit;font-size:14px;border-radius:10px;border:1px solid var(--border);
+    background:var(--surface-1);color:var(--text-primary);cursor:pointer;
+    transition:background .15s, transform .1s;
+  }
+  @media(hover:hover){
+    button:hover{background:#E5E3DB;}
+    .btn-primary:hover{background:var(--text-accent);}
+  }
+  button:active{transform:scale(0.98);}
+  button:disabled{cursor:default;}
+  .btn-primary{width:100%;padding:13px;font-weight:600;background:var(--accent);color:#fff;border:none;}
+  .btn-primary:active{background:var(--text-accent);}
+  .btn-ghost{background:transparent;border:1px solid var(--border);padding:8px 14px;font-size:13px;font-weight:600;}
+
+  /* ---------- écran d'accueil ---------- */
+  #subject-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:18px;}
+  .subj-chip{
+    padding:10px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;
+    border:1px solid var(--border);background:var(--surface-1);text-align:center;
+    transition:opacity .15s;-webkit-user-select:none;user-select:none;
+  }
+
+  /* ---------- la MAP ---------- */
+  #screen-start,#screen-map,#screen-quiz,#screen-boss,#screen-end,#screen-sprint-start,#screen-sprint,#screen-sprint-end{display:none;}
+  /* cartes de jeu sur le menu */
+  .game-card{
+    display:flex;align-items:center;gap:14px;padding:16px;margin-bottom:12px;
+    border:1px solid var(--border);border-radius:14px;background:var(--surface-1);
+    cursor:pointer;transition:background .15s, transform .1s;-webkit-user-select:none;user-select:none;
+  }
+  @media(hover:hover){.game-card:hover{background:#E5E3DB;}}
+  .game-card:active{transform:scale(0.985);}
+  .game-emoji{font-size:38px;line-height:1;flex-shrink:0;}
+  .game-name{font-size:16px;font-weight:700;margin:0 0 3px;}
+  .game-desc{font-size:13px;color:var(--text-secondary);margin:0;line-height:1.4;}
+  /* sprint */
+  .sprint-timer{font-size:20px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;}
+  #sprint-q{font-size:30px;font-weight:700;text-align:center;margin:8px 0 18px;}
+  #sprint-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  #sprint-options button{padding:18px 12px;font-size:20px;font-weight:600;}
+  #sprint-bar{height:100%;width:0%;background:var(--accent);transition:width .2s;}
+  #sprint-feedback{font-size:14px;font-weight:600;min-height:20px;text-align:center;margin-bottom:8px;}
+  .rec-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:10px;background:var(--surface-1);font-size:14px;margin-bottom:6px;}
+  .rec-row.rec-top{background:var(--gold-bg);border:1px solid var(--gold);}
+  .rec-rank{font-weight:700;color:var(--text-muted);width:28px;flex-shrink:0;}
+  .rec-name{font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rec-time{font-weight:700;font-variant-numeric:tabular-nums;margin:0 10px;}
+  .rec-meta{font-size:12px;color:var(--text-muted);}
+  .map-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:10px;}
+  .map-title{font-size:16px;font-weight:700;margin:0;}
+  .map-sub{font-size:12px;color:var(--text-muted);margin:0 0 14px;}
+  #map-wrap{
+    position:relative;width:100%;background:linear-gradient(#EAF3DE,#F2F6EA 60%,#FBF1D8);
+    border:1px solid var(--border);border-radius:14px;overflow:hidden;
+  }
+  #map-svg{display:block;width:100%;height:auto;}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:12px;color:var(--text-secondary);}
+  .legend span{display:flex;align-items:center;gap:6px;}
+  .dot{width:14px;height:14px;border-radius:50%;display:inline-block;}
+
+  /* ---------- quiz ---------- */
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;}
+  #q-badge{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--bg-accent);color:var(--text-accent);}
+  #q-count{font-size:13px;color:var(--text-muted);white-space:nowrap;}
+  .progress-track{height:6px;background:var(--surface-1);border-radius:3px;margin-bottom:18px;overflow:hidden;}
+  #progress-bar{height:100%;width:0%;background:var(--accent);transition:width .3s;}
+  .q-diff{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.4px;}
+  .diff-1{background:var(--success-bg);color:var(--success-text);}
+  .diff-2{background:var(--bg-accent);color:var(--text-accent);}
+  .diff-3{background:var(--danger-bg);color:var(--danger-text);}
+  #q-text{font-size:17px;font-weight:600;margin:0 0 16px;line-height:1.5;}
+  #q-options{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  #q-options button{text-align:left;padding:13px 14px;font-size:16px;}
+  #q-feedback{font-size:14px;font-weight:600;min-height:20px;margin-bottom:8px;}
+  #btn-next{display:none;width:100%;padding:13px;font-weight:600;margin-top:6px;}
+  .quit-row{margin-top:14px;display:flex;justify-content:center;}
+
+  /* ---------- vies (cœurs) ---------- */
+  .lives{display:flex;gap:4px;align-items:center;}
+  .heart{font-size:18px;line-height:1;}
+
+  /* ---------- boss ---------- */
+  .boss-stage{text-align:center;margin-bottom:8px;}
+  .boss-emoji{font-size:64px;line-height:1;margin:6px 0;display:block;transition:transform .15s;}
+  .boss-shake{animation:shake .4s;}
+  @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}
+  .bar-label{display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:4px;}
+  .boss-track{height:14px;background:var(--surface-1);border-radius:7px;overflow:hidden;margin-bottom:6px;border:1px solid var(--border);}
+  #boss-hp{height:100%;width:100%;background:linear-gradient(90deg,#E24B4A,#791F1F);transition:width .4s;}
+  .you-track{height:10px;background:var(--surface-1);border-radius:5px;overflow:hidden;margin-bottom:16px;border:1px solid var(--border);}
+  #you-hp{height:100%;width:100%;background:linear-gradient(90deg,#639922,#27500A);transition:width .4s;}
+
+  /* ---------- fin ---------- */
+  .end-score{display:flex;align-items:baseline;gap:8px;margin-bottom:20px;}
+  .end-score .num{font-size:32px;font-weight:700;}
+  .end-score .label{font-size:14px;color:var(--text-secondary);}
+  .crown{font-size:56px;text-align:center;display:block;margin:4px 0 10px;}
+  .section-label{font-size:14px;color:var(--text-secondary);margin:0 0 8px;font-weight:600;}
+  .row-card{display:flex;justify-content:space-between;padding:10px 14px;border-radius:10px;background:var(--surface-1);font-size:13px;margin-bottom:6px;}
+  .row-weak{background:var(--danger-bg);color:var(--danger-text);}
+  .end-block{margin-bottom:20px;}
+  .banner{padding:14px;border-radius:12px;text-align:center;font-weight:700;margin-bottom:18px;}
+  .banner-win{background:var(--gold-bg);color:var(--gold);border:1px solid var(--gold);}
+  .banner-lose{background:var(--danger-bg);color:var(--danger-text);border:1px solid var(--danger-border);}
+  /* modale de confirmation maison */
+  #confirm-overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);
+    z-index:1000;align-items:center;justify-content:center;
+    padding:calc(20px + env(safe-area-inset-top)) 20px;
+  }
+  #confirm-overlay.show{display:flex;}
+  #confirm-box{
+    background:var(--surface);border:1px solid var(--border);border-radius:16px;
+    padding:22px;max-width:380px;width:100%;
+  }
+  #confirm-msg{font-size:15px;font-weight:600;line-height:1.5;margin:0 0 18px;}
+  #confirm-actions{display:flex;gap:10px;justify-content:flex-end;}
+</style>
+</head>
+<body>
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <p id="confirm-msg"></p>
+    <div id="confirm-actions">
+      <button class="btn-ghost" id="confirm-no">Annuler</button>
+      <button class="btn-primary" id="confirm-yes" style="width:auto;padding:11px 20px;">Confirmer</button>
+    </div>
+  </div>
+</div>
+<div class="card">
+
+  <!-- ========== MENU PRINCIPAL ========== -->
+  <div id="screen-menu">
+    <h1>Mes Révisions CM1 – CM2</h1>
+    <p class="subtitle">Choisis ton jeu.</p>
+    <div class="game-card" id="card-aventure">
+      <div class="game-emoji">🏰</div>
+      <div class="game-txt">
+        <p class="game-name">L'Aventure des Révisions</p>
+        <p class="game-desc">20 niveaux, 6 matières, un boss à vaincre pour devenir Roi du royaume.</p>
+      </div>
+    </div>
+    <div class="game-card" id="card-sprint">
+      <div class="game-emoji">⚡</div>
+      <div class="game-txt">
+        <p class="game-name">Sprint Multiplications</p>
+        <p class="game-desc">20 multiplications le plus vite possible. Bats ton record !</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== ACCUEIL AVENTURE ========== -->
+  <div id="screen-start">
+    <div class="map-head">
+      <p class="map-title">🏰 L'Aventure des Révisions</p>
+      <button class="btn-ghost" id="btn-aventure-back">← Menu</button>
+    </div>
+    <p class="subtitle">Traverse 20 niveaux de plus en plus difficiles, gagne du terrain sur la carte, puis affronte le Boss du château pour devenir Roi ou Reine du royaume.</p>
+    <div id="resume-box" style="display:none;background:var(--bg-accent);border:1px solid var(--accent);border-radius:12px;padding:14px;margin-bottom:18px;">
+      <p id="resume-info" style="margin:0 0 10px;font-size:14px;font-weight:600;color:var(--text-accent);"></p>
+      <button class="btn-primary" id="btn-resume" style="margin-bottom:8px;">▶️ Reprendre l'aventure</button>
+      <button class="btn-ghost" id="btn-newgame" style="width:100%;">Nouvelle partie</button>
+    </div>
+    <p class="section-label">Choisis tes matières</p>
+    <div id="subject-grid"></div>
+    <button class="btn-primary" id="btn-start">Commencer l'aventure</button>
+  </div>
+
+  <!-- ========== SPRINT MULTIPLICATIONS ========== -->
+  <div id="screen-sprint-start">
+    <div class="map-head">
+      <p class="map-title">⚡ Sprint Multiplications</p>
+      <button class="btn-ghost" id="btn-sprint-back">← Menu</button>
+    </div>
+    <p class="subtitle">20 multiplications (tables de 2 à 9). Réponds le plus vite possible : le chrono tourne du début à la fin. Une mauvaise réponse ajoute 5 secondes de pénalité !</p>
+    <div id="sprint-records-box" class="end-block">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <p class="section-label" style="margin:0;">🏆 Tableau des records</p>
+        <button class="btn-ghost" id="btn-reset-records" style="padding:6px 12px;font-size:12px;">🗑️ Réinitialiser</button>
+      </div>
+      <div id="sprint-records"></div>
+    </div>
+    <button class="btn-primary" id="btn-sprint-go">C'est parti !</button>
+  </div>
+
+  <div id="screen-sprint">
+    <div class="topbar">
+      <span id="sprint-count"></span>
+      <span id="sprint-timer" class="sprint-timer">0.0 s</span>
+    </div>
+    <div class="progress-track"><div id="sprint-bar"></div></div>
+    <p id="sprint-q"></p>
+    <div id="sprint-options"></div>
+    <div id="sprint-feedback"></div>
+    <div class="quit-row"><button class="btn-ghost" id="btn-sprint-quit">Quitter</button></div>
+  </div>
+
+  <div id="screen-sprint-end">
+    <div id="sprint-end-banner"></div>
+    <div class="end-score">
+      <span class="num" id="sprint-final-time"></span>
+      <span class="label" id="sprint-final-label"></span>
+    </div>
+    <div id="sprint-name-box" class="end-block" style="display:none;background:var(--gold-bg);border:1px solid var(--gold);border-radius:12px;padding:14px;">
+      <p class="section-label" style="margin-bottom:8px;">✍️ Ton prénom pour le tableau des records</p>
+      <input id="sprint-name-input" type="text" maxlength="12" placeholder="Ton prénom" autocomplete="off"
+        style="width:100%;padding:12px;font-size:16px;font-family:inherit;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;box-sizing:border-box;">
+      <button class="btn-primary" id="btn-save-record">Enregistrer mon score</button>
+    </div>
+    <div class="end-block">
+      <p class="section-label">🏆 Tableau des records</p>
+      <div id="sprint-records-end"></div>
+    </div>
+    <button class="btn-primary" id="btn-sprint-again" style="margin-bottom:8px;">Rejouer</button>
+    <button class="btn-ghost" id="btn-sprint-menu" style="width:100%;">← Retour au menu</button>
+  </div>
+
+  <!-- ========== MAP ========== -->
+  <div id="screen-map">
+    <div class="map-head">
+      <p class="map-title">Le Royaume des Savoirs</p>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-ghost" id="btn-map-menu">← Menu</button>
+        <button class="btn-ghost" id="btn-abandon">Abandonner</button>
+      </div>
+    </div>
+    <p class="map-sub" id="map-progress"></p>
+    <div id="map-wrap"><div id="map-svg"></div></div>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--success-border)"></span>Réussi</span>
+      <span><span class="dot" style="background:var(--accent)"></span>Niveau actuel</span>
+      <span><span class="dot" style="background:var(--border)"></span>À venir</span>
+      <span><span class="dot" style="background:var(--gold)"></span>Château du Boss</span>
+    </div>
+    <div style="margin-top:16px"><button class="btn-primary" id="btn-play-level"></button></div>
+  </div>
+
+  <!-- ========== QUIZ ========== -->
+  <div id="screen-quiz">
+    <div class="topbar">
+      <span id="q-badge"></span>
+      <span class="lives" id="q-lives"></span>
+    </div>
+    <div class="topbar" style="margin-bottom:14px">
+      <span id="q-count"></span>
+      <span class="q-diff" id="q-diff"></span>
+    </div>
+    <div class="progress-track"><div id="progress-bar"></div></div>
+    <p id="q-text"></p>
+    <div id="q-options"></div>
+    <div id="q-feedback"></div>
+    <button id="btn-next">Continuer</button>
+    <div class="quit-row"><button class="btn-ghost" id="btn-quit-quiz">Quitter le niveau</button></div>
+  </div>
+
+  <!-- ========== BOSS ========== -->
+  <div id="screen-boss">
+    <div class="map-head">
+      <p class="map-title">⚔️ Le Boss du Château</p>
+      <button class="btn-ghost" id="btn-quit-boss">Fuir</button>
+    </div>
+    <div class="boss-stage">
+      <span class="boss-emoji" id="boss-emoji">🐉</span>
+    </div>
+    <div class="bar-label"><span id="boss-name">Dragon Gardien</span><span id="boss-hp-text"></span></div>
+    <div class="boss-track"><div id="boss-hp"></div></div>
+    <div class="bar-label"><span>Toi</span><span id="you-hp-text"></span></div>
+    <div class="you-track"><div id="you-hp"></div></div>
+    <div class="progress-track" style="display:none"></div>
+    <p id="boss-q-text" style="font-size:17px;font-weight:600;margin:0 0 14px;line-height:1.5;"></p>
+    <div id="boss-options" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+    <div id="boss-feedback" style="font-size:14px;font-weight:600;min-height:20px;margin-bottom:8px;"></div>
+    <button id="boss-next" style="display:none;width:100%;padding:13px;font-weight:600;">Continuer le combat</button>
+  </div>
+
+  <!-- ========== FIN ========== -->
+  <div id="screen-end">
+    <div id="end-banner"></div>
+    <div class="end-score">
+      <span class="num" id="end-score"></span>
+      <span class="label">bonnes réponses au total</span>
+    </div>
+    <div class="end-block">
+      <p class="section-label">Compétences à retravailler en priorité</p>
+      <div id="end-weak"></div>
+    </div>
+    <div class="end-block">
+      <p class="section-label">Détail par matière</p>
+      <div id="end-subjects"></div>
+    </div>
+    <button class="btn-primary" id="btn-restart">Rejouer l'aventure</button>
+  </div>
+
+</div>
+
+<script>
+window.addEventListener('error',function(ev){
+  var d=document.createElement('div');
+  d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#791F1F;color:#fff;padding:12px;font:13px -apple-system,sans-serif;';
+  d.textContent='⚠️ Erreur : '+(ev.message||ev.error)+'  — ouvre le fichier dans Safari (pas dans WhatsApp).';
+  if(document.body) document.body.appendChild(d);
+});
+const BANK = [
+/* ============ ORTHOGRAPHE ============ */
+// facile (d:1)
+{m:"Orthographe",c:"homophones a/à",q:"Il ___ mangé une pomme.",o:["a","à"],a:0,d:1},
+{m:"Orthographe",c:"homophones a/à",q:"Elle va ___ l'école.",o:["a","à"],a:1,d:1},
+{m:"Orthographe",c:"pluriel des noms",q:"Le pluriel de 'un chat' est :",o:["des chats","des chat","des chate","des chaz"],a:0,d:1},
+{m:"Orthographe",c:"accord sujet-verbe",q:"Les enfants ___ dans le jardin.",o:["joue","jouent","jouer","joues"],a:1,d:1},
+{m:"Orthographe",c:"majuscules",q:"Quelle phrase est bien écrite ?",o:["paris est une ville","Paris est une ville","paris Est une ville","PARIS est une Ville"],a:1,d:1},
+{m:"Orthographe",c:"lettre finale muette",q:"Quel est le bon mot ?",o:["un peti","un petit","un petti","un petih"],a:1,d:1},
+{m:"Orthographe",c:"son [s]",q:"Complète : un gar___on",o:["c","ç","ss","s"],a:1,d:1},
+{m:"Orthographe",c:"pluriel des noms",q:"Le pluriel de 'une fleur' est :",o:["des fleur","des fleurs","des fleures","des fleurx"],a:1,d:1},
+// moyen (d:2)
+{m:"Orthographe",c:"accord sujet-verbe",q:"Ma sœur et moi ___ au cinéma.",o:["allons","vont","va","allez"],a:0,d:2},
+{m:"Orthographe",c:"homophones et/est",q:"Le chat ___ noir ___ blanc.",o:["est / et","et / est","et / et","est / est"],a:1,d:2},
+{m:"Orthographe",c:"pluriel des noms",q:"Le pluriel de 'un cheval' est :",o:["des chevals","des chevaux","des chevales","des cheval"],a:1,d:2},
+{m:"Orthographe",c:"pluriel des noms",q:"Le pluriel de 'un bijou' est :",o:["des bijoux","des bijous","des bijoues","des bijou"],a:0,d:2},
+{m:"Orthographe",c:"accord adjectif",q:"Une robe ___ (joli).",o:["joli","jolis","jolie","jolies"],a:2,d:2},
+{m:"Orthographe",c:"mots invariables",q:"Quel mot est invariable ?",o:["beaucoup","heureux","table","chanter"],a:0,d:2},
+{m:"Orthographe",c:"homophones on/ont",q:"Ils ___ fini leur travail.",o:["on","ont","ont","hon"],a:1,d:2},
+{m:"Orthographe",c:"homophones son/sont",q:"Les élèves ___ contents.",o:["son","sont","sons","cont"],a:1,d:2},
+{m:"Orthographe",c:"pluriel en -eau",q:"Le pluriel de 'un château' est :",o:["des châteaus","des châteaux","des châteux","des château"],a:1,d:2},
+{m:"Orthographe",c:"son [ã]",q:"Complète : un enf___",o:["an","en","ant","ent"],a:2,d:2},
+// difficile (d:3)
+{m:"Orthographe",c:"accord participe passé avec être",q:"Elle est ___ (parti) à 8h.",o:["parti","partie","partis","parties"],a:1,d:3},
+{m:"Orthographe",c:"accord participe passé avec avoir",q:"Les fleurs qu'il a ___ (cueillir).",o:["cueilli","cueillie","cueillis","cueillies"],a:3,d:3},
+{m:"Orthographe",c:"homophones ces/ses",q:"Il range ___ affaires (les siennes).",o:["ces","ses","c'est","sais"],a:1,d:3},
+{m:"Orthographe",c:"homophones leur/leurs",q:"Les enfants prennent ___ cartables.",o:["leur","leurs","leure","l'heure"],a:1,d:3},
+{m:"Orthographe",c:"accord adjectif de couleur",q:"Des chaussures ___ (marron).",o:["marron","marrons","marronnes","marrones"],a:0,d:3},
+{m:"Orthographe",c:"pluriel en -ou",q:"Quel pluriel en -oux est correct ?",o:["des trou","des verrous","des cailloux","des clou"],a:2,d:3},
+{m:"Orthographe",c:"homophones se/ce",q:"___ matin, il ___ lève tôt.",o:["Se / ce","Ce / se","Ce / ce","Se / se"],a:1,d:3},
+
+/* ============ GRAMMAIRE ============ */
+{m:"Grammaire",c:"nature des mots",q:"Dans 'le grand chat dort', 'grand' est :",o:["un nom","un adjectif","un verbe","un adverbe"],a:1,d:1},
+{m:"Grammaire",c:"nature des mots",q:"'chien' est :",o:["un verbe","un nom","un adjectif","un adverbe"],a:1,d:1},
+{m:"Grammaire",c:"déterminants",q:"Dans 'le ballon', 'le' est :",o:["un nom","un article","un verbe","un adjectif"],a:1,d:1},
+{m:"Grammaire",c:"types de phrases",q:"'Quelle belle journée !' est une phrase :",o:["déclarative","interrogative","exclamative","injonctive"],a:2,d:1},
+{m:"Grammaire",c:"ponctuation",q:"Quel signe termine une question ?",o:[".","!","?",","],a:2,d:1},
+{m:"Grammaire",c:"singulier/pluriel",q:"'les voitures' est :",o:["au singulier","au pluriel","un verbe","un adjectif"],a:1,d:1},
+{m:"Grammaire",c:"masculin/féminin",q:"'une table' est :",o:["masculin","féminin","pluriel","un verbe"],a:1,d:1},
+{m:"Grammaire",c:"fonction des mots",q:"Dans 'Léa mange une pomme', 'une pomme' est :",o:["sujet","COD","COI","attribut"],a:1,d:2},
+{m:"Grammaire",c:"déterminants",q:"Dans 'mes amis arrivent', 'mes' est :",o:["un article","un déterminant possessif","un pronom","un adjectif"],a:1,d:2},
+{m:"Grammaire",c:"pronoms",q:"Dans 'il court', 'il' est un :",o:["nom","pronom personnel","adjectif","article"],a:1,d:2},
+{m:"Grammaire",c:"sujet du verbe",q:"Quel est le sujet de 'Le chien aboie' ?",o:["aboie","Le chien","le","rien"],a:1,d:2},
+{m:"Grammaire",c:"adverbes",q:"Dans 'il court vite', 'vite' est :",o:["un nom","un adverbe","un adjectif","un verbe"],a:1,d:2},
+{m:"Grammaire",c:"types de phrases",q:"'Ferme la porte.' est une phrase :",o:["déclarative","interrogative","injonctive","exclamative"],a:2,d:2},
+{m:"Grammaire",c:"verbe conjugué",q:"Dans 'nous mangeons', le verbe est :",o:["nous","mangeons","rien","mange seulement"],a:1,d:2},
+{m:"Grammaire",c:"sujet du verbe",q:"Quel est le sujet de : 'Dans le ciel volent des oiseaux' ?",o:["le ciel","volent","des oiseaux","dans"],a:2,d:3},
+{m:"Grammaire",c:"pronoms",q:"Dans 'Paul le donne à Léa', 'le' remplace :",o:["Paul","l'objet donné","Léa","le verbe"],a:1,d:3},
+{m:"Grammaire",c:"fonction des mots",q:"Dans 'Le ciel est bleu', 'bleu' est :",o:["COD","attribut du sujet","sujet","complément"],a:1,d:3},
+{m:"Grammaire",c:"phrase complexe",q:"Une phrase avec deux verbes conjugués reliés par 'et' est :",o:["simple","complexe","nominale","interrogative"],a:1,d:3},
+{m:"Grammaire",c:"compléments",q:"Dans 'Il part demain', 'demain' est un complément :",o:["de lieu","de temps","d'objet","de manière"],a:1,d:3},
+{m:"Grammaire",c:"COD/COI",q:"Dans 'Je parle à mon frère', 'à mon frère' est :",o:["COD","COI","sujet","attribut"],a:1,d:3},
+{m:"Grammaire",c:"nature des mots",q:"'rapidement' est :",o:["un adjectif","un adverbe","un nom","un verbe"],a:1,d:3},
+
+/* ============ CONJUGAISON ============ */
+{m:"Conjugaison",c:"présent 1er groupe",q:"Conjugue 'chanter' au présent avec 'je' :",o:["chante","chantes","chantent","chanter"],a:0,d:1},
+{m:"Conjugaison",c:"présent être",q:"Conjugue 'être' au présent avec 'je' :",o:["es","suis","est","sont"],a:1,d:1},
+{m:"Conjugaison",c:"présent avoir",q:"Conjugue 'avoir' au présent avec 'tu' :",o:["ai","as","a","ont"],a:1,d:1},
+{m:"Conjugaison",c:"présent 1er groupe",q:"Conjugue 'jouer' au présent avec 'il' :",o:["joue","joues","jouent","jouer"],a:0,d:1},
+{m:"Conjugaison",c:"infinitif",q:"L'infinitif de 'je mange' est :",o:["mangé","manger","mange","mangeons"],a:1,d:1},
+{m:"Conjugaison",c:"présent aller",q:"Conjugue 'aller' au présent avec 'je' :",o:["va","vais","vas","vont"],a:1,d:1},
+{m:"Conjugaison",c:"présent 1er groupe",q:"Conjugue 'chanter' au présent avec 'nous' :",o:["chantons","chantez","chante","chantent"],a:0,d:2},
+{m:"Conjugaison",c:"présent 3e groupe",q:"Conjugue 'aller' au présent avec 'ils' :",o:["allont","vont","allent","va"],a:1,d:2},
+{m:"Conjugaison",c:"futur simple",q:"Conjugue 'avoir' au futur avec 'tu' :",o:["auras","avais","as","aura"],a:0,d:2},
+{m:"Conjugaison",c:"imparfait",q:"Conjugue 'manger' à l'imparfait avec 'nous' :",o:["mangions","mangeons","mangeâmes","mangerons"],a:0,d:2},
+{m:"Conjugaison",c:"présent 2e groupe",q:"Conjugue 'finir' au présent avec 'nous' :",o:["finons","finissons","finissez","finons"],a:1,d:2},
+{m:"Conjugaison",c:"futur simple",q:"Conjugue 'aller' au futur avec 'je' :",o:["irai","vais","allerai","irais"],a:0,d:2},
+{m:"Conjugaison",c:"imparfait",q:"Conjugue 'avoir' à l'imparfait avec 'il' :",o:["a","avait","aura","eut"],a:1,d:2},
+{m:"Conjugaison",c:"présent 3e groupe",q:"Conjugue 'faire' au présent avec 'vous' :",o:["faites","faisez","faisiez","faire"],a:0,d:2},
+{m:"Conjugaison",c:"futur simple",q:"Conjugue 'finir' au futur avec 'elle' :",o:["finit","finissait","finira","finirait"],a:2,d:3},
+{m:"Conjugaison",c:"imparfait",q:"Conjugue 'être' à l'imparfait avec 'vous' :",o:["êtes","étiez","fûtes","serez"],a:1,d:3},
+{m:"Conjugaison",c:"passé composé",q:"Conjugue 'venir' au passé composé avec 'il' :",o:["a venu","est venu","avait venu","venait"],a:1,d:3},
+{m:"Conjugaison",c:"identifier l'infinitif",q:"L'infinitif de 'ils prennent' est :",o:["prendre","prenir","prener","pris"],a:0,d:3},
+{m:"Conjugaison",c:"passé composé",q:"Conjugue 'manger' au passé composé avec 'j'' :",o:["ai mangé","suis mangé","ai mangée","mangeais"],a:0,d:3},
+{m:"Conjugaison",c:"conditionnel",q:"Conjugue 'aimer' au conditionnel avec 'je' :",o:["aimerai","aimerais","aimais","aimerait"],a:1,d:3},
+{m:"Conjugaison",c:"futur 3e groupe",q:"Conjugue 'venir' au futur avec 'tu' :",o:["viendras","venras","viendrais","viens"],a:0,d:3},
+{m:"Conjugaison",c:"passé simple",q:"Conjugue 'être' au passé simple avec 'il' :",o:["était","fut","fût","est"],a:1,d:3},
+
+/* ============ CALCUL ============ */
+{m:"Calcul",c:"addition simple",q:"Combien font 12 + 7 ?",o:["18","19","20","17"],a:1,d:1},
+{m:"Calcul",c:"soustraction simple",q:"Combien font 15 - 6 ?",o:["8","9","10","7"],a:1,d:1},
+{m:"Calcul",c:"tables",q:"Combien font 5 × 5 ?",o:["20","25","30","15"],a:1,d:1},
+{m:"Calcul",c:"tables",q:"Combien font 3 × 4 ?",o:["7","12","9","16"],a:1,d:1},
+{m:"Calcul",c:"double",q:"Le double de 8 est :",o:["16","18","14","12"],a:0,d:1},
+{m:"Calcul",c:"moitié",q:"La moitié de 10 est :",o:["4","5","6","20"],a:1,d:1},
+{m:"Calcul",c:"comparaison",q:"Quel nombre est le plus grand ?",o:["99","101","89","100"],a:1,d:1},
+{m:"Calcul",c:"multiplication",q:"Combien font 6 × 7 ?",o:["36","42","48","49"],a:1,d:2},
+{m:"Calcul",c:"opérations posées",q:"Combien font 347 + 256 ?",o:["593","603","613","523"],a:1,d:2},
+{m:"Calcul",c:"multiplication posée",q:"Combien font 23 × 4 ?",o:["82","92","102","88"],a:1,d:2},
+{m:"Calcul",c:"division",q:"Combien font 72 ÷ 8 ?",o:["8","9","7","6"],a:1,d:2},
+{m:"Calcul",c:"fractions",q:"Quelle fraction représente la moitié ?",o:["1/3","1/2","2/3","1/4"],a:1,d:2},
+{m:"Calcul",c:"problèmes",q:"Léo a 24 billes, il en gagne 15. Combien en a-t-il ?",o:["29","39","9","49"],a:1,d:2},
+{m:"Calcul",c:"tables",q:"Combien font 8 × 9 ?",o:["72","64","81","79"],a:0,d:2},
+{m:"Calcul",c:"arrondi",q:"L'arrondi à la dizaine de 47 est :",o:["40","50","45","47"],a:1,d:2},
+{m:"Calcul",c:"opérations posées",q:"Combien font 1000 - 463 ?",o:["537","563","467","647"],a:0,d:3},
+{m:"Calcul",c:"fractions",q:"3/4 + 1/4 égale :",o:["1","4/8","2/4","1/2"],a:0,d:3},
+{m:"Calcul",c:"nombres décimaux",q:"3,5 + 2,4 égale :",o:["5,9","6,9","5,8","6,0"],a:0,d:3},
+{m:"Calcul",c:"division",q:"Combien font 96 ÷ 4 ?",o:["22","24","26","23"],a:1,d:3},
+{m:"Calcul",c:"problèmes",q:"4 paquets de 12 gâteaux : combien de gâteaux ?",o:["44","48","36","52"],a:1,d:3},
+{m:"Calcul",c:"nombres décimaux",q:"7,2 - 3,5 égale :",o:["3,7","4,3","3,3","4,7"],a:0,d:3},
+{m:"Calcul",c:"multiplication posée",q:"Combien font 124 × 3 ?",o:["362","372","382","352"],a:1,d:3},
+{m:"Calcul",c:"problèmes",q:"Un stylo coûte 2,50 €. Combien coûtent 4 stylos ?",o:["8 €","10 €","9 €","12 €"],a:1,d:3},
+
+/* ============ GÉOMÉTRIE ============ */
+{m:"Géométrie",c:"figures planes",q:"Combien de côtés a un triangle ?",o:["2","3","4","5"],a:1,d:1},
+{m:"Géométrie",c:"figures planes",q:"Combien de côtés a un carré ?",o:["3","4","5","6"],a:1,d:1},
+{m:"Géométrie",c:"figures planes",q:"Une figure ronde s'appelle :",o:["un carré","un cercle","un triangle","un rectangle"],a:1,d:1},
+{m:"Géométrie",c:"angles",q:"Un angle droit ressemble à :",o:["un coin de feuille","un rond","une ligne droite","une vague"],a:0,d:1},
+{m:"Géométrie",c:"solides",q:"Un ballon de foot a la forme d'une :",o:["sphère","cube","pyramide","cône"],a:0,d:1},
+{m:"Géométrie",c:"figures planes",q:"Combien de côtés a un hexagone ?",o:["5","6","7","8"],a:1,d:2},
+{m:"Géométrie",c:"figures planes",q:"Un carré a :",o:["4 côtés égaux et 4 angles droits","4 côtés inégaux","3 côtés","des angles arrondis"],a:0,d:2},
+{m:"Géométrie",c:"droites",q:"Deux droites qui ne se croisent jamais sont :",o:["sécantes","perpendiculaires","parallèles","obliques"],a:2,d:2},
+{m:"Géométrie",c:"angles",q:"Un angle droit mesure :",o:["45°","90°","180°","60°"],a:1,d:2},
+{m:"Géométrie",c:"solides",q:"Un cube a combien de faces ?",o:["4","6","8","12"],a:1,d:2},
+{m:"Géométrie",c:"vocabulaire",q:"L'instrument pour tracer un cercle est :",o:["la règle","le compas","l'équerre","le rapporteur"],a:1,d:2},
+{m:"Géométrie",c:"périmètre",q:"Le périmètre d'un carré de 4 cm de côté est :",o:["8 cm","12 cm","16 cm","4 cm"],a:2,d:2},
+{m:"Géométrie",c:"périmètre",q:"Le périmètre d'un rectangle de 5cm sur 3cm est :",o:["8 cm","15 cm","16 cm","13 cm"],a:2,d:3},
+{m:"Géométrie",c:"symétrie",q:"Une figure a un axe de symétrie quand :",o:["elle a 4 côtés","pliée sur cet axe, les 2 parties se superposent","elle est ronde","elle a des angles droits"],a:1,d:3},
+{m:"Géométrie",c:"solides",q:"Combien d'arêtes a un cube ?",o:["6","8","12","4"],a:2,d:3},
+{m:"Géométrie",c:"aire",q:"L'aire d'un rectangle de 5 cm sur 4 cm est :",o:["9 cm²","20 cm²","18 cm²","40 cm²"],a:1,d:3},
+{m:"Géométrie",c:"droites",q:"Deux droites qui se coupent à angle droit sont :",o:["parallèles","perpendiculaires","sécantes obliques","confondues"],a:1,d:3},
+{m:"Géométrie",c:"figures planes",q:"Un quadrilatère avec 4 côtés égaux mais pas d'angle droit est :",o:["un carré","un losange","un rectangle","un trapèze"],a:1,d:3},
+{m:"Géométrie",c:"vocabulaire",q:"Le rapporteur sert à mesurer :",o:["les longueurs","les angles","les aires","les volumes"],a:1,d:3},
+
+/* ============ HISTOIRE ============ */
+{m:"Histoire",c:"préhistoire",q:"Les hommes préhistoriques peignaient sur les murs des :",o:["temples","grottes","châteaux","pyramides"],a:1,d:1},
+{m:"Histoire",c:"préhistoire",q:"Quel outil les hommes préhistoriques utilisaient-ils ?",o:["le téléphone","le silex taillé","l'ordinateur","la voiture"],a:1,d:1},
+{m:"Histoire",c:"Moyen Âge",q:"Un seigneur du Moyen Âge vivait dans :",o:["un château fort","une pyramide","un temple","une grotte"],a:0,d:1},
+{m:"Histoire",c:"vocabulaire",q:"Quelqu'un qui étudie le passé est un :",o:["géographe","historien","mathématicien","scientifique"],a:1,d:1},
+{m:"Histoire",c:"Moyen Âge",q:"Qui combattait à cheval pour le roi au Moyen Âge ?",o:["les paysans","les chevaliers","les marchands","les moines"],a:1,d:1},
+{m:"Histoire",c:"Antiquité",q:"Les Gaulois vivaient avant l'arrivée des :",o:["Romains","Vikings","Anglais","Espagnols"],a:0,d:2},
+{m:"Histoire",c:"temps modernes",q:"Qui a découvert l'Amérique en 1492 ?",o:["Christophe Colomb","Jules César","Napoléon","Louis XIV"],a:0,d:2},
+{m:"Histoire",c:"Antiquité",q:"Les pharaons régnaient en :",o:["Égypte","Gaule","Angleterre","Italie"],a:0,d:2},
+{m:"Histoire",c:"Moyen Âge",q:"Les grandes églises construites au Moyen Âge s'appellent :",o:["des cathédrales","des temples","des mosquées","des pyramides"],a:0,d:2},
+{m:"Histoire",c:"rois",q:"Quel roi a fait construire le château de Versailles ?",o:["Louis XIV","Napoléon","Charlemagne","François Ier"],a:0,d:2},
+{m:"Histoire",c:"Révolution française",q:"En quelle année a eu lieu la prise de la Bastille ?",o:["1492","1789","1815","1900"],a:1,d:3},
+{m:"Histoire",c:"chronologie",q:"Quel ordre chronologique est correct ?",o:["Moyen Âge, Préhistoire, Antiquité","Préhistoire, Antiquité, Moyen Âge","Antiquité, Moyen Âge, Préhistoire","Moyen Âge, Antiquité, Préhistoire"],a:1,d:3},
+{m:"Histoire",c:"Antiquité",q:"Qui a conquis la Gaule pour Rome ?",o:["Jules César","Vercingétorix","Clovis","Charlemagne"],a:0,d:3},
+{m:"Histoire",c:"rois",q:"Charlemagne a été couronné empereur en :",o:["l'an 800","1492","1789","l'an 1000"],a:0,d:3},
+{m:"Histoire",c:"Révolution française",q:"La Révolution française proclame la :",o:["monarchie","République","empire","royauté"],a:1,d:3},
+{m:"Histoire",c:"XXe siècle",q:"La Première Guerre mondiale a commencé en :",o:["1914","1939","1789","1815"],a:0,d:3},
+
+/* ============ ANGLAIS ============ */
+{m:"Anglais",c:"vocabulaire animaux",q:"Comment dit-on 'chien' en anglais ?",o:["cat","dog","bird","fish"],a:1,d:1},
+{m:"Anglais",c:"vocabulaire animaux",q:"'cat' veut dire :",o:["chien","chat","oiseau","poisson"],a:1,d:1},
+{m:"Anglais",c:"couleurs",q:"'red' veut dire :",o:["bleu","rouge","vert","jaune"],a:1,d:1},
+{m:"Anglais",c:"couleurs",q:"'blue' veut dire :",o:["bleu","rouge","noir","blanc"],a:0,d:1},
+{m:"Anglais",c:"nombres",q:"Comment dit-on 3 en anglais ?",o:["two","three","four","five"],a:1,d:1},
+{m:"Anglais",c:"salutations",q:"'Hello' veut dire :",o:["au revoir","bonjour","merci","oui"],a:1,d:1},
+{m:"Anglais",c:"couleurs",q:"'Yellow' veut dire :",o:["rouge","vert","jaune","bleu"],a:2,d:2},
+{m:"Anglais",c:"nombres",q:"Comment dit-on 12 en anglais ?",o:["ten","eleven","twelve","twenty"],a:2,d:2},
+{m:"Anglais",c:"jours de la semaine",q:"'Wednesday' c'est :",o:["lundi","mercredi","vendredi","dimanche"],a:1,d:2},
+{m:"Anglais",c:"vocabulaire école",q:"'a book' veut dire :",o:["un livre","un stylo","une table","une porte"],a:0,d:2},
+{m:"Anglais",c:"famille",q:"'mother' veut dire :",o:["père","mère","sœur","frère"],a:1,d:2},
+{m:"Anglais",c:"nombres",q:"Comment dit-on 20 en anglais ?",o:["twelve","twenty","two","ten"],a:1,d:2},
+{m:"Anglais",c:"questions simples",q:"Comment demande-t-on 'comment t'appelles-tu ?' en anglais ?",o:["What's your name?","How are you?","Where are you?","What's that?"],a:0,d:3},
+{m:"Anglais",c:"verbe to be",q:"Complète : I ___ a student.",o:["is","are","am","be"],a:2,d:3},
+{m:"Anglais",c:"verbe to be",q:"Complète : She ___ happy.",o:["am","is","are","be"],a:1,d:3},
+{m:"Anglais",c:"questions simples",q:"'How old are you?' demande :",o:["ton âge","ton nom","où tu vas","ce que tu fais"],a:0,d:3},
+{m:"Anglais",c:"vocabulaire",q:"'I have got two ___' (deux frères) :",o:["sister","brothers","mother","father"],a:1,d:3},
+{m:"Anglais",c:"grammaire",q:"Le pluriel de 'a child' est :",o:["childs","children","childes","childrens"],a:1,d:3}
+];
+
+const subjects = [...new Set(BANK.map(q=>q.m))];
+
+const TOTAL_LEVELS = 20;          // 19 niveaux normaux + 1 château (boss)
+const BOSS_LEVEL = TOTAL_LEVELS;  // dernier = boss
+const QPERLEVEL = 4;              // questions par niveau normal
+const LIVES_PER_LEVEL = 3;        // erreurs tolérées par niveau
+const BOSS_HP = 6;                // bonnes réponses pour battre le boss
+const YOU_HP = 3;                 // erreurs tolérées au boss
+
+// difficulté ciblée selon le niveau (1..19) -> 1,2,3
+function levelDifficulty(lvl){
+  if(lvl<=6) return 1;
+  if(lvl<=13) return 2;
+  return 3;
+}
+
+let state = {};
+function freshState(){
+  return {
+    selected:new Set(subjects),
+    currentLevel:1,
+    maxUnlocked:1,
+    used:new Set(),            // questions déjà posées (par index BANK)
+    score:0, total:0,
+    competenceStats:{},
+    // par-niveau
+    levelQueue:[], levelPos:0, levelLives:LIVES_PER_LEVEL, current:null,
+    // boss
+    bossHp:BOSS_HP, youHp:YOU_HP, bossCurrent:null,
+    won:false, lost:false
+  };
+}
+
+/* ---------------- accueil ---------------- */
+function buildSubjectGrid(){
+  const grid=document.getElementById('subject-grid');
+  grid.innerHTML='';
+  subjects.forEach(s=>{
+    const div=document.createElement('div');
+    div.className='subj-chip'; div.textContent=s; div.style.opacity=1;
+    div.addEventListener('click',()=>{
+      if(state.selected.has(s)){state.selected.delete(s);div.style.opacity=0.35;}
+      else{state.selected.add(s);div.style.opacity=1;}
+    });
+    grid.appendChild(div);
+  });
+}
+
+/* ---------------- sélection des questions ---------------- */
+// indices BANK filtrés par matière sélectionnée
+function availIdx(diff){
+  const out=[];
+  BANK.forEach((q,i)=>{
+    if(!state.selected.has(q.m)) return;
+    if(state.used.has(i)) return;
+    if(diff && q.d!==diff) return;
+    out.push(i);
+  });
+  return out;
+}
+// tire 1 question en privilégiant compétences ratées; fallback difficulté voisine
+function pickQuestion(diff){
+  let pool=availIdx(diff);
+  if(pool.length===0){ // élargit la difficulté
+    for(const d of [diff-1,diff+1,null]){
+      pool=availIdx(d===null?null:d);
+      if(pool.length) break;
+    }
+  }
+  if(pool.length===0){ // tout consommé : on autorise la répétition
+    state.used.clear();
+    pool=availIdx(diff); if(pool.length===0) pool=availIdx(null);
+  }
+  const weights=pool.map(i=>{
+    const st=state.competenceStats[BANK[i].c];
+    if(!st) return 1;
+    const wr=st.wrong/((st.wrong+st.right)||1);
+    return 1+wr*4;
+  });
+  const tot=weights.reduce((a,b)=>a+b,0);
+  let r=Math.random()*tot;
+  for(let k=0;k<pool.length;k++){r-=weights[k]; if(r<=0) return pool[k];}
+  return pool[pool.length-1];
+}
+
+/* ---------------- MAP rendering ---------------- */
+// positions en serpentin sur 20 cases
+function levelPositions(){
+  const cols=5, rows=4, pad=42, W=560, H=440;
+  const stepX=(W-2*pad)/(cols-1), stepY=(H-2*pad)/(rows-1);
+  const pts=[];
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const col = (r%2===0)? c : (cols-1-c);
+      const n=r*cols+c+1;
+      pts.push({n, x:pad+col*stepX, y:pad+r*stepY});
+    }
+  }
+  return pts; // 20 points, index 0 => niveau 1
+}
+function renderMap(){
+  const pts=levelPositions();
+  const W=560,H=440;
+  let path='';
+  for(let i=0;i<pts.length;i++){
+    path += (i===0?'M':'L')+pts[i].x+' '+pts[i].y+' ';
+  }
+  let svg='<svg id="map-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">';
+  // chemin
+  svg+='<path d="'+path+'" fill="none" stroke="#D3D1C7" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 14"/>';
+  // décor simple
+  svg+='<text x="20" y="30" font-size="22">🌲</text><text x="520" y="60" font-size="22">⛰️</text><text x="40" y="420" font-size="20">🌳</text>';
+  pts.forEach((p,idx)=>{
+    const lvl=p.n;
+    const isBoss=(lvl===BOSS_LEVEL);
+    const done=lvl<state.maxUnlocked;
+    const currentUnlocked=lvl<=state.maxUnlocked;
+    let fill,stroke;
+    if(isBoss){fill='#FBF1D8';stroke='#C9961F';}
+    else if(done){fill='#EAF3DE';stroke='#639922';}
+    else if(lvl===state.currentLevel){fill='#E6F1FB';stroke='#185FA5';}
+    else if(currentUnlocked){fill='#E6F1FB';stroke='#185FA5';}
+    else {fill='#F0EEE7';stroke='#D3D1C7';}
+    const rr=isBoss?22:16;
+    svg+='<circle cx="'+p.x+'" cy="'+p.y+'" r="'+rr+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="3"/>';
+    if(isBoss){
+      svg+='<text x="'+p.x+'" y="'+(p.y+7)+'" font-size="22" text-anchor="middle">🏰</text>';
+    } else if(done){
+      svg+='<text x="'+p.x+'" y="'+(p.y+6)+'" font-size="16" text-anchor="middle">⭐</text>';
+    } else {
+      svg+='<text x="'+p.x+'" y="'+(p.y+5)+'" font-size="14" font-weight="700" text-anchor="middle" fill="'+(currentUnlocked?'#0C447C':'#888780')+'">'+lvl+'</text>';
+    }
+    // avatar sur le niveau courant
+    if(lvl===state.currentLevel && !state.won){
+      svg+='<text x="'+p.x+'" y="'+(p.y-26)+'" font-size="26" text-anchor="middle">🧒</text>';
+    }
+    if(state.won && isBoss){
+      svg+='<text x="'+p.x+'" y="'+(p.y-26)+'" font-size="26" text-anchor="middle">👑</text>';
+    }
+  });
+  svg+='</svg>';
+  document.getElementById('map-svg').innerHTML=svg;
+
+  document.getElementById('map-progress').textContent =
+    'Niveau '+state.currentLevel+' sur '+TOTAL_LEVELS+' — '+
+    (state.currentLevel===BOSS_LEVEL?'le château t\'attend !':'progression '+Math.round(100*(state.currentLevel-1)/TOTAL_LEVELS)+'%');
+
+  const btn=document.getElementById('btn-play-level');
+  if(state.currentLevel===BOSS_LEVEL){
+    btn.textContent='⚔️ Affronter le Boss';
+  } else {
+    btn.textContent='▶️ Jouer le niveau '+state.currentLevel+' (difficulté '+['','facile','moyen','difficile'][levelDifficulty(state.currentLevel)]+')';
+  }
+}
+
+/* ---------------- navigation écrans ---------------- */
+function show(id){
+  ['screen-menu','screen-start','screen-map','screen-quiz','screen-boss','screen-end','screen-sprint-start','screen-sprint','screen-sprint-end']
+    .forEach(s=>document.getElementById(s).style.display='none');
+  document.getElementById(id).style.display='block';
+}
+
+function startAdventure(){
+  if(state.selected.size===0){alert('Choisis au moins une matière.');return;}
+  goToMap();
+}
+function goToMap(){ renderMap(); show('screen-map'); }
+
+/* ---------------- un NIVEAU normal ---------------- */
+function startLevel(){
+  if(state.currentLevel===BOSS_LEVEL){ return startBoss(); }
+  const diff=levelDifficulty(state.currentLevel);
+  if(state._lastLevelTried!==state.currentLevel){ state._lastLevelTried=state.currentLevel; state.levelTries=0; }
+  state.levelTries=(state.levelTries||0)+1;
+  state.levelQueue=[]; state.levelPos=0; state.levelLives=LIVES_PER_LEVEL;
+  for(let k=0;k<QPERLEVEL;k++){
+    const i=pickQuestion(diff);
+    state.used.add(i);
+    state.levelQueue.push(i);
+  }
+  show('screen-quiz');
+  loadLevelQuestion();
+}
+function renderLives(){
+  let h='';
+  for(let k=0;k<LIVES_PER_LEVEL;k++){
+    h+='<span class="heart">'+(k<state.levelLives?'❤️':'🤍')+'</span>';
+  }
+  document.getElementById('q-lives').innerHTML=h;
+}
+// renvoie une copie de la question avec options mélangées et bon index recalculé
+function shuffleQ(src){
+  const idxs=src.o.map((_,i)=>i);
+  for(let i=idxs.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idxs[i],idxs[j]]=[idxs[j],idxs[i]];}
+  const o=idxs.map(i=>src.o[i]);
+  const a=idxs.indexOf(src.a);
+  return {m:src.m,c:src.c,q:src.q,d:src.d,o,a};
+}
+function loadLevelQuestion(){
+  const idx=state.levelQueue[state.levelPos];
+  const q=shuffleQ(BANK[idx]); state.current={idx,q};
+  document.getElementById('q-badge').textContent=q.m+' · '+q.c;
+  document.getElementById('q-count').textContent='Niveau '+state.currentLevel+' — question '+(state.levelPos+1)+'/'+QPERLEVEL;
+  const dd=document.getElementById('q-diff');
+  dd.textContent=['','facile','moyen','difficile'][q.d];
+  dd.className='q-diff diff-'+q.d;
+  document.getElementById('progress-bar').style.width=(100*state.levelPos/QPERLEVEL)+'%';
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('q-feedback').textContent='';
+  document.getElementById('btn-next').style.display='none';
+  renderLives();
+  const opts=document.getElementById('q-options'); opts.innerHTML='';
+  q.o.forEach((opt,i)=>{
+    const b=document.createElement('button'); b.textContent=opt;
+    b.addEventListener('click',()=>answerLevel(i)); opts.appendChild(b);
+  });
+}
+function recordStat(c,correct){
+  if(!state.competenceStats[c]) state.competenceStats[c]={right:0,wrong:0};
+  state.competenceStats[c][correct?'right':'wrong']++;
+}
+function answerLevel(i){
+  const {q}=state.current;
+  const correct=(i===q.a);
+  state.total++; if(correct) state.score++;
+  recordStat(q.c,correct);
+  if(!correct) state.levelLives--;
+  const opts=document.getElementById('q-options').children;
+  for(let j=0;j<opts.length;j++){
+    opts[j].disabled=true;
+    if(j===q.a){opts[j].style.background='var(--success-bg)';opts[j].style.borderColor='var(--success-border)';opts[j].style.color='var(--success-text)';}
+    if(j===i&&!correct){opts[j].style.background='var(--danger-bg)';opts[j].style.borderColor='var(--danger-border)';opts[j].style.color='var(--danger-text)';}
+  }
+  renderLives();
+  const fb=document.getElementById('q-feedback');
+  fb.textContent=correct?'Bonne réponse !':'Pas tout à fait : la bonne réponse est surlignée.';
+  fb.style.color=correct?'var(--success-text)':'var(--danger-text)';
+
+  if(state.levelLives<=0){
+    const nb=document.getElementById('btn-next');
+    if(state.levelTries>=2){
+      // pas de blocage : on valide le niveau après 2 tentatives ratées
+      fb.textContent='💪 Niveau difficile ! On le valide quand même, l\'aventure continue.';
+      nb.textContent='Continuer vers la carte';
+      state._failLevel=false; state._forcePass=true;
+    } else {
+      fb.textContent='💔 Plus de vies ! On retente ce niveau.';
+      nb.textContent='Réessayer le niveau';
+      state._failLevel=true;
+    }
+    nb.style.display='block'; return;
+  }
+  const nb=document.getElementById('btn-next');
+  if(state.levelPos+1>=QPERLEVEL){ nb.textContent='✅ Niveau réussi — voir la carte'; }
+  else { nb.textContent='Continuer'; }
+  nb.style.display='block'; state._failLevel=false;
+}
+function nextLevelStep(){
+  if(state._failLevel){ startLevel(); return; } // recommence le même niveau
+  if(state._forcePass){                          // niveau validé après 2 échecs
+    state._forcePass=false;
+    state.currentLevel++;
+    if(state.currentLevel>state.maxUnlocked) state.maxUnlocked=state.currentLevel;
+    saveProgress(); goToMap(); return;
+  }
+  state.levelPos++;
+  if(state.levelPos>=QPERLEVEL){
+    // niveau réussi
+    state.currentLevel++;
+    if(state.currentLevel>state.maxUnlocked) state.maxUnlocked=state.currentLevel;
+    saveProgress(); goToMap();
+  } else {
+    loadLevelQuestion();
+  }
+}
+
+/* ---------------- BOSS ---------------- */
+function startBoss(){
+  state.bossHp=BOSS_HP; state.youHp=YOU_HP;
+  show('screen-boss');
+  loadBossQuestion();
+  updateBossBars();
+}
+function updateBossBars(){
+  document.getElementById('boss-hp').style.width=(100*state.bossHp/BOSS_HP)+'%';
+  document.getElementById('you-hp').style.width=(100*state.youHp/YOU_HP)+'%';
+  document.getElementById('boss-hp-text').textContent=state.bossHp+'/'+BOSS_HP+' ❤️';
+  document.getElementById('you-hp-text').textContent=state.youHp+'/'+YOU_HP+' ❤️';
+}
+function loadBossQuestion(){
+  const i=pickQuestion(3); state.used.add(i);
+  const q=shuffleQ(BANK[i]); state.bossCurrent={idx:i,q};
+  document.getElementById('boss-q-text').textContent=q.q;
+  document.getElementById('boss-feedback').textContent='';
+  document.getElementById('boss-next').style.display='none';
+  const opts=document.getElementById('boss-options'); opts.innerHTML='';
+  q.o.forEach((opt,k)=>{
+    const b=document.createElement('button'); b.textContent=opt;
+    b.style.textAlign='left'; b.style.padding='13px 14px'; b.style.fontSize='16px';
+    b.addEventListener('click',()=>answerBoss(k)); opts.appendChild(b);
+  });
+}
+function answerBoss(k){
+  const {q}=state.bossCurrent;
+  const correct=(k===q.a);
+  state.total++; if(correct) state.score++;
+  recordStat(q.c,correct);
+  const opts=document.getElementById('boss-options').children;
+  for(let j=0;j<opts.length;j++){
+    opts[j].disabled=true;
+    if(j===q.a){opts[j].style.background='var(--success-bg)';opts[j].style.borderColor='var(--success-border)';opts[j].style.color='var(--success-text)';}
+    if(j===k&&!correct){opts[j].style.background='var(--danger-bg)';opts[j].style.borderColor='var(--danger-border)';opts[j].style.color='var(--danger-text)';}
+  }
+  const emoji=document.getElementById('boss-emoji');
+  const fb=document.getElementById('boss-feedback');
+  if(correct){
+    state.bossHp--;
+    emoji.classList.remove('boss-shake'); void emoji.offsetWidth; emoji.classList.add('boss-shake');
+    fb.textContent='⚔️ Touché ! Le boss perd un cœur.'; fb.style.color='var(--success-text)';
+  } else {
+    state.youHp--;
+    fb.textContent='🔥 Le boss riposte, tu perds un cœur !'; fb.style.color='var(--danger-text)';
+  }
+  updateBossBars();
+  if(state.bossHp<=0){ emoji.textContent='💥'; return finishAdventure(true); }
+  if(state.youHp<=0){ return finishAdventure(false); }
+  document.getElementById('boss-next').style.display='block';
+}
+
+/* ---------------- FIN ---------------- */
+function finishAdventure(won){
+  state.won=won; state.lost=!won;
+  saveProgress();
+  show('screen-end');
+  const banner=document.getElementById('end-banner');
+  if(won){
+    banner.className='banner banner-win';
+    banner.innerHTML='<span class="crown">👑</span>Bravo ! Tu as vaincu le Boss et tu deviens Roi/Reine du Royaume des Savoirs !';
+  } else {
+    banner.className='banner banner-lose';
+    banner.innerHTML='Le Boss était trop fort cette fois… Réessaie l\'aventure pour t\'emparer de la couronne !';
+  }
+  document.getElementById('end-score').textContent=state.score+' / '+state.total;
+
+  const weak=Object.entries(state.competenceStats)
+    .filter(([c,s])=>s.wrong>0)
+    .sort((a,b)=>(b[1].wrong/(b[1].wrong+b[1].right))-(a[1].wrong/(a[1].wrong+a[1].right)))
+    .slice(0,6);
+  const wd=document.getElementById('end-weak'); wd.innerHTML='';
+  if(weak.length===0){wd.innerHTML='<p style="font-size:14px;color:var(--text-secondary)">Aucune difficulté détectée, bravo !</p>';}
+  else weak.forEach(([c,s])=>{
+    const row=document.createElement('div'); row.className='row-card row-weak';
+    row.innerHTML='<span>'+c+'</span><span>'+s.wrong+' erreur(s) sur '+(s.wrong+s.right)+'</span>';
+    wd.appendChild(row);
+  });
+
+  const sd=document.getElementById('end-subjects'); sd.innerHTML='';
+  const bySubj={};
+  Object.entries(state.competenceStats).forEach(([c,s])=>{});
+  // recompose par matière via stats de compétence -> on relie compétence->matière
+  const compToSubj={}; BANK.forEach(q=>compToSubj[q.c]=q.m);
+  const agg={};
+  Object.entries(state.competenceStats).forEach(([c,s])=>{
+    const m=compToSubj[c]||'?';
+    if(!agg[m]) agg[m]={right:0,wrong:0};
+    agg[m].right+=s.right; agg[m].wrong+=s.wrong;
+  });
+  Object.entries(agg).forEach(([m,s])=>{
+    const tot=s.right+s.wrong;
+    const row=document.createElement('div'); row.className='row-card';
+    row.innerHTML='<span>'+m+'</span><span>'+s.right+'/'+tot+' réussies</span>';
+    sd.appendChild(row);
+  });
+}
+
+/* ================= SPRINT MULTIPLICATIONS ================= */
+const SPRINT_N=20;          // nombre de multiplications
+const SPRINT_PENALTY=5000;  // pénalité ms par erreur
+const SPRINT_KEY='sprint-multi-records-v1';
+let sprint={};
+
+function sprintRecords(){
+  if(!STORAGE_OK) return [];
+  try{const r=localStorage.getItem(SPRINT_KEY);return r?JSON.parse(r):[];}catch(e){return [];}
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function saveSprintRecord(ms,errors,name){
+  if(!STORAGE_OK) return [];
+  let recs=sprintRecords();
+  const d=new Date();
+  const dateStr=d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' '+
+                d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  const cleanName=(name&&name.trim())?name.trim().slice(0,12):'Anonyme';
+  recs.push({ms,errors,date:dateStr,ts:Date.now(),name:cleanName});
+  recs.sort((a,b)=>a.ms-b.ms);        // meilleur temps = plus petit
+  recs=recs.slice(0,10);              // top 10 (pour plusieurs joueurs)
+  try{localStorage.setItem(SPRINT_KEY,JSON.stringify(recs));}catch(e){}
+  return recs;
+}
+function fmtTime(ms){return (ms/1000).toFixed(1).replace('.',',')+' s';}
+
+function renderSprintRecords(containerId,highlightTs){
+  const box=document.getElementById(containerId);
+  const recs=sprintRecords();
+  if(recs.length===0){
+    box.innerHTML='<p style="font-size:14px;color:var(--text-secondary)">'+
+      (STORAGE_OK?'Aucun record pour l\'instant. Sois le premier !':'L\'historique des records nécessite d\'ouvrir le fichier dans Safari (il ne marche pas dans cette fenêtre).')+'</p>';
+    return;
+  }
+  box.innerHTML='';
+  recs.forEach((r,i)=>{
+    const mine=highlightTs&&r.ts===highlightTs;
+    const row=document.createElement('div');
+    row.className='rec-row'+(i===0?' rec-top':'');
+    const medal=['🥇','🥈','🥉'][i]||(i+1)+'.';
+    const nm=escapeHtml(r.name||'Anonyme');
+    row.innerHTML='<span class="rec-rank">'+medal+'</span>'+
+      '<span class="rec-name">'+nm+(mine?' ⭐':'')+'</span>'+
+      '<span class="rec-time">'+fmtTime(r.ms)+'</span>'+
+      '<span class="rec-meta">'+(r.errors>0?r.errors+' err.':'0 err.')+'</span>';
+    box.appendChild(row);
+  });
+}
+
+function genMult(){
+  const a=2+Math.floor(Math.random()*8); // 2..9
+  const b=2+Math.floor(Math.random()*8); // 2..9
+  return {a,b};
+}
+// construit 20 multiplications DISTINCTES (sans remise) parmi les tables 2..9
+function buildMultDeck(n){
+  const pairs=[];
+  for(let a=2;a<=9;a++) for(let b=2;b<=9;b++){
+    if(a<=b) pairs.push({a,b}); // évite a×b et b×a en double (ex 7×9 == 9×7)
+  }
+  // mélange Fisher-Yates
+  for(let i=pairs.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pairs[i],pairs[j]]=[pairs[j],pairs[i]];}
+  const deck=pairs.slice(0,n);
+  // pour chaque, sens d'affichage aléatoire (7×9 ou 9×7)
+  return deck.map(p=>Math.random()<0.5?p:{a:p.b,b:p.a});
+}
+// génère 4 options dont la bonne, sans doublon, proches du résultat
+function sprintOptions(prod){
+  const opts=new Set([prod]);
+  let guard=0;
+  while(opts.size<4 && guard<50){
+    guard++;
+    const delta=[-12,-9,-8,-6,-4,-3,-2,-1,1,2,3,4,6,8,9,12][Math.floor(Math.random()*16)];
+    const v=prod+delta;
+    if(v>0) opts.add(v);
+  }
+  while(opts.size<4){opts.add(prod+opts.size);} // filet de sécurité
+  const arr=[...opts];
+  for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
+  return arr;
+}
+
+function startSprint(){
+  sprint={pos:0,errors:0,startTime:Date.now(),timerId:null,current:null,locked:false,deck:buildMultDeck(SPRINT_N)};
+  show('screen-sprint');
+  sprint.timerId=setInterval(updateSprintTimer,100);
+  loadSprintQuestion();
+}
+function updateSprintTimer(){
+  const elapsed=Date.now()-sprint.startTime+sprint.errors*SPRINT_PENALTY;
+  document.getElementById('sprint-timer').textContent=fmtTime(elapsed);
+}
+function loadSprintQuestion(){
+  sprint.locked=false;
+  const m=sprint.deck[sprint.pos];
+  const prod=m.a*m.b;
+  sprint.current={prod};
+  document.getElementById('sprint-count').textContent='Multiplication '+(sprint.pos+1)+' / '+SPRINT_N;
+  document.getElementById('sprint-bar').style.width=(100*sprint.pos/SPRINT_N)+'%';
+  document.getElementById('sprint-q').textContent=m.a+' × '+m.b+' = ?';
+  const fb=document.getElementById('sprint-feedback'); fb.textContent=''; fb.style.color='';
+  const opts=document.getElementById('sprint-options'); opts.innerHTML='';
+  sprintOptions(prod).forEach(v=>{
+    const b=document.createElement('button'); b.textContent=v;
+    b.addEventListener('click',()=>answerSprint(v,b)); opts.appendChild(b);
+  });
+}
+function paintCorrect(btn){
+  btn.style.background='var(--success-bg)';btn.style.borderColor='var(--success-border)';btn.style.color='var(--success-text)';
+}
+function paintWrong(btn){
+  btn.style.background='var(--danger-bg)';btn.style.borderColor='var(--danger-border)';btn.style.color='var(--danger-text)';
+}
+function answerSprint(v,btn){
+  if(sprint.locked) return;
+  const prod=sprint.current.prod;
+  const fb=document.getElementById('sprint-feedback');
+  if(v===prod){
+    sprint.locked=true;                    // bloque les autres clics
+    paintCorrect(btn);
+    fb.textContent='✅ Bravo !'; fb.style.color='var(--success-text)';
+    const last=(sprint.pos+1>=SPRINT_N);
+    setTimeout(()=>{
+      sprint.pos++;
+      if(last){ endSprint(); } else { loadSprintQuestion(); }
+    },350);                                // court flash vert avant de continuer
+  } else {
+    // erreur : pénalité, bouton rouge, on reste sur la question
+    sprint.errors++;
+    btn.disabled=true;
+    paintWrong(btn);
+    fb.textContent='❌ +5 s de pénalité ! Réessaie.';
+    fb.style.color='var(--danger-text)';
+  }
+}
+function endSprint(){
+  clearInterval(sprint.timerId);
+  const totalMs=Date.now()-sprint.startTime+sprint.errors*SPRINT_PENALTY;
+  sprint.finalMs=totalMs; sprint.saved=false;
+  const recsBefore=sprintRecords();
+  const prevBest=recsBefore.length?recsBefore[0].ms:Infinity;
+  const isBest=totalMs<prevBest;
+  show('screen-sprint-end');
+  const banner=document.getElementById('sprint-end-banner');
+  if(isBest && recsBefore.length>0){
+    banner.className='banner banner-win';
+    banner.innerHTML='🏆 Nouveau record ! Tu as battu le meilleur temps !';
+  } else if(recsBefore.length===0){
+    banner.className='banner banner-win';
+    banner.innerHTML='🎉 Premier temps enregistré ! Essaie de le battre.';
+  } else {
+    banner.className='banner';banner.style.background='var(--bg-accent)';banner.style.color='var(--text-accent)';
+    banner.innerHTML='Bien joué ! Le meilleur reste '+fmtTime(prevBest)+'. Retente ta chance !';
+  }
+  document.getElementById('sprint-final-time').textContent=fmtTime(totalMs);
+  document.getElementById('sprint-final-label').textContent=
+    sprint.errors>0?('dont +'+(sprint.errors*5)+'s de pénalité ('+sprint.errors+' erreur'+(sprint.errors>1?'s':'')+')'):'sans aucune erreur 🎯';
+
+  // bloc de saisie du nom (si stockage dispo)
+  const nameBox=document.getElementById('sprint-name-box');
+  if(STORAGE_OK){
+    nameBox.style.display='block';
+    const inp=document.getElementById('sprint-name-input');
+    inp.value=lastPlayerName();         // pré-rempli avec le dernier nom
+    document.getElementById('btn-save-record').disabled=false;
+    document.getElementById('btn-save-record').textContent='Enregistrer mon score';
+  } else {
+    nameBox.style.display='none';
+  }
+  renderSprintRecords('sprint-records-end', null);
+}
+function lastPlayerName(){
+  if(!STORAGE_OK) return '';
+  try{return localStorage.getItem('sprint-last-name')||'';}catch(e){return '';}
+}
+function doSaveRecord(){
+  if(sprint.saved) return;
+  const name=document.getElementById('sprint-name-input').value;
+  try{localStorage.setItem('sprint-last-name',(name&&name.trim())?name.trim().slice(0,12):'');}catch(e){}
+  const recs=saveSprintRecord(sprint.finalMs,sprint.errors,name);
+  sprint.saved=true;
+  const myTs=recs.find(r=>r.ms===sprint.finalMs&&r.errors===sprint.errors);
+  const btn=document.getElementById('btn-save-record');
+  btn.disabled=true; btn.textContent='✅ Score enregistré !';
+  renderSprintRecords('sprint-records-end', myTs?myTs.ts:null);
+}
+
+/* ================= fin sprint ================= */
+
+
+const SAVE_KEY='aventure-revisions-cm1cm2-v1';
+function hasStorage(){
+  try{const k='__t';localStorage.setItem(k,'1');localStorage.removeItem(k);return true;}
+  catch(e){return false;}
+}
+const STORAGE_OK=hasStorage();
+function saveProgress(){
+  if(!STORAGE_OK) return;
+  try{
+    const data={
+      selected:[...state.selected],
+      currentLevel:state.currentLevel,
+      maxUnlocked:state.maxUnlocked,
+      score:state.score, total:state.total,
+      competenceStats:state.competenceStats,
+      used:[...state.used],
+      finished:state.won||state.lost,
+      won:state.won
+    };
+    localStorage.setItem(SAVE_KEY,JSON.stringify(data));
+  }catch(e){}
+}
+function loadSave(){
+  if(!STORAGE_OK) return null;
+  try{const raw=localStorage.getItem(SAVE_KEY);return raw?JSON.parse(raw):null;}
+  catch(e){return null;}
+}
+function clearSave(){ if(STORAGE_OK){try{localStorage.removeItem(SAVE_KEY);}catch(e){}} }
+function applySave(d){
+  state=freshState();
+  state.selected=new Set(d.selected&&d.selected.length?d.selected:subjects);
+  state.currentLevel=d.currentLevel||1;
+  state.maxUnlocked=d.maxUnlocked||state.currentLevel;
+  state.score=d.score||0; state.total=d.total||0;
+  state.competenceStats=d.competenceStats||{};
+  state.used=new Set(d.used||[]);
+}
+// affiche le bouton Reprendre sur l'accueil si une partie est en cours
+function refreshResumeUI(){
+  const box=document.getElementById('resume-box');
+  if(!box) return;
+  const d=loadSave();
+  if(d && !d.finished && (d.currentLevel>1 || (d.maxUnlocked&&d.maxUnlocked>1))){
+    box.style.display='block';
+    document.getElementById('resume-info').textContent=
+      'Aventure en cours : niveau '+d.currentLevel+' sur '+TOTAL_LEVELS+'.';
+  } else {
+    box.style.display='none';
+  }
+}
+
+/* ---------------- modale de confirmation maison ---------------- */
+let _confirmYes=null;
+function askConfirm(message,onYes){
+  _confirmYes=onYes;
+  document.getElementById('confirm-msg').textContent=message;
+  document.getElementById('confirm-overlay').classList.add('show');
+}
+function closeConfirm(){
+  document.getElementById('confirm-overlay').classList.remove('show');
+  _confirmYes=null;
+}
+document.getElementById('confirm-yes').addEventListener('click',()=>{
+  const cb=_confirmYes; closeConfirm(); if(cb) cb();
+});
+document.getElementById('confirm-no').addEventListener('click',closeConfirm);
+document.getElementById('confirm-overlay').addEventListener('click',(e)=>{
+  if(e.target.id==='confirm-overlay') closeConfirm(); // clic hors de la boîte = annuler
+});
+
+/* ---------------- listeners ---------------- */
+document.getElementById('btn-start').addEventListener('click',startAdventure);
+document.getElementById('btn-play-level').addEventListener('click',startLevel);
+document.getElementById('btn-next').addEventListener('click',nextLevelStep);
+document.getElementById('boss-next').addEventListener('click',loadBossQuestion);
+
+document.getElementById('btn-quit-quiz').addEventListener('click',()=>{
+  askConfirm('Quitter ce niveau et revenir à la carte ? Ta progression de niveau sera conservée.',goToMap);
+});
+document.getElementById('btn-quit-boss').addEventListener('click',()=>{
+  askConfirm('Fuir le combat et revenir à la carte ?',goToMap);
+});
+document.getElementById('btn-abandon').addEventListener('click',()=>{
+  askConfirm('Abandonner l\'aventure et voir ton bilan ?',()=>finishAdventure(false));
+});
+document.getElementById('btn-map-menu').addEventListener('click',()=>{
+  saveProgress();   // conserve la progression pour pouvoir reprendre
+  goToMenu();
+});
+document.getElementById('btn-restart').addEventListener('click',()=>{
+  clearSave();
+  state=freshState();
+  buildSubjectGrid();
+  refreshResumeUI();
+  show('screen-start');
+});
+
+document.getElementById('btn-resume').addEventListener('click',()=>{
+  const d=loadSave();
+  if(d){ applySave(d); goToMap(); }
+});
+document.getElementById('btn-newgame').addEventListener('click',()=>{
+  clearSave(); state=freshState(); buildSubjectGrid(); refreshResumeUI();
+});
+
+/* ---- menu principal ---- */
+function goToMenu(){ refreshResumeUI(); show('screen-menu'); }
+document.getElementById('card-aventure').addEventListener('click',()=>{
+  buildSubjectGrid(); refreshResumeUI(); show('screen-start');
+});
+document.getElementById('card-sprint').addEventListener('click',()=>{
+  renderSprintRecords('sprint-records'); show('screen-sprint-start');
+});
+document.getElementById('btn-aventure-back').addEventListener('click',goToMenu);
+document.getElementById('btn-sprint-back').addEventListener('click',goToMenu);
+
+/* ---- sprint ---- */
+document.getElementById('btn-sprint-go').addEventListener('click',startSprint);
+document.getElementById('btn-reset-records').addEventListener('click',()=>{
+  if(!STORAGE_OK){ askConfirm('Le tableau des records n\'est pas disponible dans cette fenêtre (ouvre le fichier dans Safari sur iPhone).',()=>{}); return; }
+  if(sprintRecords().length===0){ askConfirm('Le tableau est déjà vide.',()=>{}); return; }
+  askConfirm('Effacer définitivement tous les records ? Cette action est irréversible.',()=>{
+    try{localStorage.removeItem(SPRINT_KEY);}catch(e){}
+    renderSprintRecords('sprint-records');
+  });
+});
+document.getElementById('btn-save-record').addEventListener('click',doSaveRecord);
+document.getElementById('btn-sprint-quit').addEventListener('click',()=>{
+  askConfirm('Quitter le sprint ? Ton temps ne sera pas enregistré.',()=>{
+    if(sprint.timerId) clearInterval(sprint.timerId);
+    renderSprintRecords('sprint-records'); show('screen-sprint-start');
+  });
+});
+document.getElementById('btn-sprint-again').addEventListener('click',startSprint);
+document.getElementById('btn-sprint-menu').addEventListener('click',goToMenu);
+
+/* ---------------- init ---------------- */
+try{
+  state=freshState();
+  buildSubjectGrid();
+  refreshResumeUI();
+  show('screen-menu');
+}catch(e){
+  var d=document.createElement('div');
+  d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#791F1F;color:#fff;padding:12px;font:13px -apple-system,sans-serif;';
+  d.textContent='⚠️ Erreur de démarrage : '+e.message+' — essaie d\'ouvrir le fichier dans Safari.';
+  document.body.appendChild(d);
+}
+</script>
+</body>
+</html>
