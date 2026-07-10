@@ -1994,7 +1994,7 @@ function monsterWave(){
   const dur=Math.max(4.5, 9 - mon.wave*0.18);      // descente lente, accélère très progressivement
   q.o.forEach(function(opt,i){
     const m=document.createElement('div'); m.className='monster';
-    m.style.left=lanes[i]+'%'; m.style.animationDuration=dur+'s'; m.style.animationDelay='0.8s';   // temps de lire la question d'abord
+    m.style.left=lanes[i]+'%'; m.style.animationDuration=dur+'s'; m.style.animationDelay='2s';   // temps de lire la question d'abord
     m.dataset.correct=(i===q.a)?'1':'0';
     m.innerHTML='<span class="mon-emoji">'+monEmoji()+'</span><span class="mon-ans">'+escapeHtml(opt)+'</span>';
     m.addEventListener('pointerdown',function(ev){ ev.preventDefault(); monsterTap(m); });
