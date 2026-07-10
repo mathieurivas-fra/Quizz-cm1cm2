@@ -206,6 +206,14 @@
   .board-tab{flex:1;padding:8px 6px;}
   #tour-options{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
   #tour-options button{text-align:left;padding:13px 14px;font-size:16px;}
+  /* animation de la tour */
+  #tour-viz{display:flex;flex-direction:column;align-items:center;margin-bottom:14px;min-height:80px;justify-content:flex-end;}
+  #tour-hero{font-size:30px;line-height:1;margin-bottom:3px;}
+  .tour-hop{animation:tourhop .42s ease;}
+  @keyframes tourhop{0%{transform:translateY(0)}40%{transform:translateY(-11px)}100%{transform:translateY(0)}}
+  .tour-brick{width:64px;height:15px;margin-top:2px;border-radius:3px;background:linear-gradient(var(--accent),var(--text-accent));box-shadow:inset 0 -2px rgba(0,0,0,.15);}
+  .tour-brick.new{animation:brickin .4s ease;}
+  @keyframes brickin{0%{transform:scaleX(.35);opacity:0}100%{transform:scaleX(1);opacity:1}}
   .board-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
   /* avatars sur le podium/classement */
   .pod-ava{font-size:30px;line-height:1;}
@@ -285,7 +293,7 @@
       <div class="game-emoji">🗼</div>
       <div class="game-txt">
         <p class="game-name">La Tour des Savoirs</p>
-        <p class="game-desc">Grimpe le plus haut possible ! Une question par étage, ça se corse... 3 vies.</p>
+        <p class="game-desc">Grimpe le plus haut possible ! Une question par étage, ça se corse... mais une seule erreur et c'est fini !</p>
       </div>
     </div>
     <div class="game-card" id="card-board">
@@ -452,8 +460,9 @@
     <div id="tour-play">
       <div class="topbar">
         <span id="tour-floor" style="font-size:15px;font-weight:800;color:var(--text-accent);"></span>
-        <span class="lives" id="tour-lives"></span>
+        <span id="tour-best" style="font-size:12px;color:var(--text-muted);"></span>
       </div>
+      <div id="tour-viz"></div>
       <div class="topbar" style="margin-bottom:14px;">
         <span id="tour-badge" style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--bg-accent);color:var(--text-accent);"></span>
         <span class="q-diff" id="tour-diff"></span>
@@ -1726,7 +1735,19 @@ const AVATARS=[
   {id:'a_prince',emoji:'🤴',name:'Prince',prix:150},
   {id:'a_princess',emoji:'👸',name:'Princesse',prix:150},
   {id:'a_dragon',emoji:'🐉',name:'Dragon',prix:250},
-  {id:'a_unicorn',emoji:'🦄',name:'Licorne',prix:250}
+  {id:'a_unicorn',emoji:'🦄',name:'Licorne',prix:250},
+  {id:'a_wolf',emoji:'🐺',name:'Loup',prix:300},
+  {id:'a_tiger',emoji:'🐯',name:'Tigre',prix:300},
+  {id:'a_owl',emoji:'🦉',name:'Hibou',prix:300},
+  {id:'a_ghost',emoji:'👻',name:'Fantôme',prix:500},
+  {id:'a_shark',emoji:'🦈',name:'Requin',prix:500},
+  {id:'a_octopus',emoji:'🐙',name:'Poulpe',prix:500},
+  {id:'a_trex',emoji:'🦖',name:'T-Rex',prix:750},
+  {id:'a_dragon2',emoji:'🐲',name:'Dragon vert',prix:750},
+  {id:'a_eagle',emoji:'🦅',name:'Aigle',prix:750},
+  {id:'a_genie',emoji:'🧞',name:'Génie',prix:1000},
+  {id:'a_crown',emoji:'👑',name:'Roi',prix:1000},
+  {id:'a_rocket',emoji:'🚀',name:'Fusée',prix:1000}
 ];
 const THEMES=[
   {id:'default',name:'Bleu',prix:0,accent:'#185FA5',bgAccent:'#E6F1FB',textAccent:'#0C447C'},
@@ -1838,7 +1859,11 @@ function startTour(){
   document.getElementById('tour-play').style.display='block';
   show('screen-tour'); loadTourQuestion();
 }
-function renderTourLives(){ let h=''; for(let k=0;k<3;k++) h+='<span class="heart">'+(k<tour.lives?'❤️':'🤍')+'</span>'; document.getElementById('tour-lives').innerHTML=h; }
+function renderTourViz(){
+  const n=Math.min(tour.floor,7); let bricks='';
+  for(let k=0;k<n;k++){ bricks+='<div class="tour-brick'+(k===0?' new':'')+'"></div>'; }
+  const viz=document.getElementById('tour-viz'); if(viz) viz.innerHTML='<div id="tour-hero" class="tour-hop">'+(profile.avatar||'🧒')+'</div>'+bricks;
+}
 function loadTourQuestion(){
   const idx=tourPick(); tour.used.add(idx); const q=shuffleQ(BANK[idx]); tour.current={idx,q};
   document.getElementById('tour-floor').textContent='🗼 Étage '+tour.floor;
@@ -1847,7 +1872,8 @@ function loadTourQuestion(){
   document.getElementById('tour-q').textContent=q.q;
   document.getElementById('tour-feedback').textContent='';
   document.getElementById('tour-next').style.display='none';
-  renderTourLives();
+  renderTourViz();
+  const bestEl=document.getElementById('tour-best'); if(bestEl) bestEl.textContent='record : 🗼 '+(profile.bestTower||0);
   const opts=document.getElementById('tour-options'); opts.innerHTML='';
   q.o.forEach(function(opt,i){ const b=document.createElement('button'); b.textContent=opt; b.addEventListener('click',function(){answerTour(i);}); opts.appendChild(b); });
 }
@@ -1859,10 +1885,15 @@ function answerTour(i){
     if(j===i&&!correct){opts[j].style.background='var(--danger-bg)';opts[j].style.borderColor='var(--danger-border)';opts[j].style.color='var(--danger-text)';}
   }
   const fb=document.getElementById('tour-feedback'), nb=document.getElementById('tour-next');
-  if(correct){ gainCorrect(8,true); opts[i].classList.add('pop'); fb.textContent='✅ Bravo ! Tu montes d\'un étage.'; fb.style.color='var(--success-text)'; }
-  else { tour.lives--; onWrong(); renderTourLives(); fb.textContent='❌ Aïe ! La bonne réponse est surlignée.'; fb.style.color='var(--danger-text)'; }
-  if(!correct && tour.lives<=0){ tour._dead=true; nb.textContent='Voir mon score 🗼'; }
-  else { tour._dead=false; nb.textContent = correct ? ('Monter à l\'étage '+(tour.floor+1)+' →') : 'Continuer (nouvelle question)'; }
+  if(correct){
+    gainCorrect(8,true); opts[i].classList.add('pop');
+    fb.textContent='✅ Bravo ! Tu montes d\'un étage.'; fb.style.color='var(--success-text)';
+    tour._dead=false; nb.textContent='Monter à l\'étage '+(tour.floor+1)+' →';
+  } else {
+    onWrong(); tour._dead=true;
+    fb.textContent='❌ Dommage ! La série s\'arrête à l\'étage '+tour.floor+'.'; fb.style.color='var(--danger-text)';
+    nb.textContent='Voir mon score 🗼';
+  }
   nb.style.display='block';
 }
 function tourNext(){
