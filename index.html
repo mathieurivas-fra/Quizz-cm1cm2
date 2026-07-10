@@ -172,6 +172,25 @@
   .badge.on .b-ico{filter:none;opacity:1;}
   .badge .b-name{font-size:10px;color:var(--text-muted);line-height:1.2;}
   .badge.on .b-name{color:var(--text-secondary);font-weight:600;}
+  /* podium classement */
+  .podium{display:flex;align-items:flex-end;justify-content:center;gap:10px;margin-bottom:16px;}
+  .pod{display:flex;flex-direction:column;align-items:center;width:92px;}
+  .pod-top{font-size:24px;line-height:1;}
+  .pod-name{font-size:12px;font-weight:700;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pod-coins{font-size:11px;color:var(--text-secondary);margin-bottom:4px;}
+  .pod-bar{width:100%;border-radius:9px 9px 0 0;color:#fff;font-weight:800;font-size:15px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;box-shadow:inset 0 -3px rgba(0,0,0,.12);}
+  /* boutique */
+  #shop-coins{font-weight:800;color:var(--gold);background:var(--gold-bg);border:1px solid var(--gold);border-radius:999px;padding:6px 14px;display:inline-block;margin-bottom:14px;font-size:15px;}
+  #shop-avatars,#shop-themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:10px;margin-bottom:8px;}
+  .shop-item{border:1px solid var(--border);border-radius:12px;background:var(--surface-1);padding:10px 6px;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:transform .1s;}
+  .shop-item:active{transform:scale(.97);}
+  .shop-item.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--bg-accent);}
+  .shop-emoji{font-size:34px;line-height:1;}
+  .shop-swatch{width:38px;height:38px;border-radius:50%;border:1px solid rgba(0,0,0,.1);}
+  .shop-name{font-size:12px;font-weight:600;}
+  .shop-price{font-size:12px;font-weight:700;color:var(--gold);}
+  .shop-choose{font-size:12px;font-weight:700;color:var(--accent);}
+  .shop-sel{font-size:12px;font-weight:700;color:var(--success-text);}
 </style>
 </head>
 <body>
@@ -187,6 +206,7 @@
 <div class="card">
 
   <div id="hud">
+    <span class="hud-pill" id="hud-avatar" style="cursor:pointer" title="Boutique">🧒</span>
     <span class="hud-pill hud-coin" id="hud-coins">🪙 0</span>
     <span class="hud-pill hud-streak" id="hud-streak" style="display:none">🔥 0</span>
     <span class="hud-mute" id="hud-mute" title="Activer / couper le son">🔊</span>
@@ -219,6 +239,13 @@
       <div class="game-txt">
         <p class="game-name">Classement en ligne</p>
         <p class="game-desc">Rejoins ton groupe et compare tes pièces et tes étoiles avec les autres joueurs !</p>
+      </div>
+    </div>
+    <div class="game-card" id="card-shop">
+      <div class="game-emoji">🛒</div>
+      <div class="game-txt">
+        <p class="game-name">Boutique</p>
+        <p class="game-desc">Dépense tes pièces d'or pour débloquer des avatars et des couleurs !</p>
       </div>
     </div>
     <p class="section-label" style="margin-top:6px;">🏅 Mes trophées <span style="font-weight:400;color:var(--text-muted);font-size:12px;">— touche un trophée pour voir comment le gagner</span></p>
@@ -389,6 +416,7 @@
 
     <div id="board-main" style="display:none">
       <p class="board-me" id="board-me" style="font-size:13px;font-weight:600;color:var(--text-accent);background:var(--bg-accent);border-radius:10px;padding:10px 12px;margin:0 0 14px;"></p>
+      <div id="board-podium" class="podium" style="display:none"></div>
       <p class="section-label">Classé par pièces 🪙</p>
       <div id="board-list"></div>
       <div style="display:flex;gap:8px;margin-top:14px;">
@@ -396,6 +424,20 @@
         <button class="btn-ghost" id="btn-board-edit">Changer pseudo / groupe</button>
       </div>
     </div>
+  </div>
+
+  <!-- ========== BOUTIQUE ========== -->
+  <div id="screen-shop">
+    <div class="map-head">
+      <p class="map-title">🛒 Boutique</p>
+      <button class="btn-ghost" id="btn-shop-back">← Menu</button>
+    </div>
+    <p class="subtitle">Gagne des pièces d'or en jouant, puis débloque des avatars et des couleurs. Touche un élément pour l'acheter ou le choisir.</p>
+    <span id="shop-coins">🪙 0 pièces</span>
+    <p class="section-label">🧑‍🚀 Avatars</p>
+    <div id="shop-avatars"></div>
+    <p class="section-label" style="margin-top:14px;">🎨 Couleurs</p>
+    <div id="shop-themes"></div>
   </div>
 
 </div>
@@ -710,10 +752,13 @@ function buildSubjectGrid(){
 
 /* ---------------- sélection des questions ---------------- */
 // indices BANK filtrés par matière sélectionnée
+// catégories de multiplication exclues de l'Aventure (déjà couvertes par le mode Sprint)
+const MULT_CATS=new Set(['tables','multiplication','multiplication posée']);
 function availIdx(diff){
   const out=[];
   BANK.forEach((q,i)=>{
     if(!state.selected.has(q.m)) return;
+    if(MULT_CATS.has(q.c)) return;          // pas de multiplications dans l'aventure
     if(state.used.has(i)) return;
     if(diff && q.d!==diff) return;
     out.push(i);
@@ -799,7 +844,7 @@ function renderMap(){
       svg+='<circle cx="'+p.x+'" cy="'+p.y+'" r="'+(rr+4)+'" fill="none" stroke="#185FA5" stroke-width="2">'
          +'<animate attributeName="r" values="'+(rr+3)+';'+(rr+10)+';'+(rr+3)+'" dur="1.6s" repeatCount="indefinite"/>'
          +'<animate attributeName="opacity" values="0.7;0;0.7" dur="1.6s" repeatCount="indefinite"/></circle>';
-      svg+='<text x="'+p.x+'" y="'+(p.y-26)+'" font-size="26" text-anchor="middle">🧒</text>';
+      svg+='<text x="'+p.x+'" y="'+(p.y-26)+'" font-size="26" text-anchor="middle">'+(profile.avatar||'🧒')+'</text>';
     }
     if(state.won && isBoss){
       svg+='<text x="'+p.x+'" y="'+(p.y-26)+'" font-size="26" text-anchor="middle">👑</text>';
@@ -822,7 +867,7 @@ function renderMap(){
 
 /* ---------------- navigation écrans ---------------- */
 function show(id){
-  ['screen-menu','screen-start','screen-map','screen-quiz','screen-boss','screen-end','screen-sprint-start','screen-sprint','screen-sprint-end','screen-board']
+  ['screen-menu','screen-start','screen-map','screen-quiz','screen-boss','screen-end','screen-sprint-start','screen-sprint','screen-sprint-end','screen-board','screen-shop']
     .forEach(s=>document.getElementById(s).style.display='none');
   document.getElementById(id).style.display='block';
   renderHUD();
@@ -1260,11 +1305,12 @@ const STORAGE_OK=hasStorage();
 
 /* ================= PROFIL / RÉCOMPENSES ================= */
 const PROFILE_KEY='revisions-profil-v1';
-let profile={coins:0,stars:0,badges:[],muted:false,bestStreak:0,totalCorrect:0,bestSprintMs:null};
+let profile={coins:0,stars:0,badges:[],muted:false,bestStreak:0,totalCorrect:0,bestSprintMs:null,avatar:'🧒',theme:'default',owned:['a_kid','default']};
 let sessionStreak=0;
 function loadProfile(){ if(!STORAGE_OK) return; try{const r=localStorage.getItem(PROFILE_KEY); if(r){profile=Object.assign(profile,JSON.parse(r)); if(!Array.isArray(profile.badges)) profile.badges=[];}}catch(e){} }
 function saveProfile(){ if(STORAGE_OK){ try{localStorage.setItem(PROFILE_KEY,JSON.stringify(profile));}catch(e){} } cloudSyncSoon(); }
 function renderHUD(){
+  const a=document.getElementById('hud-avatar'); if(a) a.textContent=profile.avatar||'🧒';
   const c=document.getElementById('hud-coins'); if(c) c.textContent='🪙 '+profile.coins;
   const s=document.getElementById('hud-streak'); if(s){ if(sessionStreak>=2){s.style.display='';s.textContent='🔥 '+sessionStreak;} else s.style.display='none'; }
   const m=document.getElementById('hud-mute'); if(m) m.textContent=profile.muted?'🔇':'🔊';
@@ -1335,7 +1381,8 @@ const BADGES=[
   {id:'coins500',ico:'🏦',name:'500 pièces',hint:'Cumule 500 pièces d\'or.'},
   {id:'boss_win',ico:'👑',name:'Roi du Royaume',hint:'Bats le Boss du château.'},
   {id:'sprint_fast',ico:'⚡',name:'Sprint < 30 s',hint:'Termine un Sprint en moins de 30 secondes.'},
-  {id:'scholar',ico:'🎓',name:'200 bonnes rép.',hint:'Atteins 200 bonnes réponses au total.'}
+  {id:'scholar',ico:'🎓',name:'200 bonnes rép.',hint:'Atteins 200 bonnes réponses au total.'},
+  {id:'group_champ',ico:'🏆',name:'Champion du groupe',hint:'Sois 1er du classement de ton groupe (au moins 2 joueurs).'}
 ];
 function badgeInfo(id){
   const b=BADGES.find(x=>x.id===id); if(!b) return;
@@ -1412,6 +1459,19 @@ function boardJoin(){
   document.getElementById('board-main').style.display='block';
   loadLeaderboard();
 }
+function renderPodium(rows){
+  const pod=document.getElementById('board-podium'); if(!pod) return;
+  if(!rows || !rows.length){ pod.innerHTML=''; pod.style.display='none'; return; }
+  pod.style.display='flex';
+  const order=[1,0,2];                 // colonnes affichées : 2e, 1er, 3e
+  const medals=['🥈','🥇','🥉'], heights=['64px','88px','48px'], colors=['#B8B8B8','#C9961F','#CD7F32'];
+  let h='';
+  order.forEach(function(ri,pos){
+    const r=rows[ri]; if(!r){ h+='<div class="pod" style="opacity:.25"><div class="pod-top">'+medals[pos]+'</div><div class="pod-name">—</div><div class="pod-coins">&nbsp;</div><div class="pod-bar" style="height:'+heights[pos]+';background:'+colors[pos]+'"></div></div>'; return; }
+    h+='<div class="pod"><div class="pod-top">'+medals[pos]+'</div><div class="pod-name">'+escapeHtml(r.pseudo||'?')+'</div><div class="pod-coins">🪙 '+(r.coins||0)+'</div><div class="pod-bar" style="height:'+heights[pos]+';background:'+colors[pos]+'">'+(ri+1)+'</div></div>';
+  });
+  pod.innerHTML=h;
+}
 function loadLeaderboard(){
   if(!cloudReady()||!cloud.groupe) return;
   const list=document.getElementById('board-list');
@@ -1421,8 +1481,10 @@ function loadLeaderboard(){
   db.collection('groupes').doc(cloud.groupe).collection('joueurs').orderBy('coins','desc').limit(50).get()
     .then(function(snap){
       const rows=[]; snap.forEach(function(d){ rows.push(d.data()); });
+      renderPodium(rows);
       if(!rows.length){ list.innerHTML='<p style="font-size:14px;color:var(--text-secondary)">Personne dans ce groupe pour l\'instant. Sois le premier ! 🎉</p>'; return; }
       const meKey=pseudoKey(cloud.pseudo); let h='';
+      if(rows.length>=2 && pseudoKey(rows[0].pseudo||'')===meKey) unlockBadge('group_champ');
       rows.forEach(function(r,i){
         const mine=(pseudoKey(r.pseudo||'')===meKey);
         const medal=['🥇','🥈','🥉'][i]||((i+1)+'.');
@@ -1437,6 +1499,69 @@ function loadLeaderboard(){
       list.innerHTML=h;
     })
     .catch(function(e){ list.innerHTML='<p style="font-size:14px;color:var(--danger-text)">Impossible de charger le classement (connexion Internet ou règles Firestore à vérifier).</p>'; });
+}
+
+/* ================= BOUTIQUE (avatars + couleurs) ================= */
+const AVATARS=[
+  {id:'a_kid',emoji:'🧒',name:'Enfant',prix:0},
+  {id:'a_cat',emoji:'🐱',name:'Chat',prix:60},
+  {id:'a_fox',emoji:'🦊',name:'Renard',prix:60},
+  {id:'a_panda',emoji:'🐼',name:'Panda',prix:80},
+  {id:'a_hero',emoji:'🦸',name:'Super-héros',prix:100},
+  {id:'a_ninja',emoji:'🥷',name:'Ninja',prix:100},
+  {id:'a_mage',emoji:'🧙',name:'Magicien',prix:120},
+  {id:'a_robot',emoji:'🤖',name:'Robot',prix:120},
+  {id:'a_alien',emoji:'👽',name:'Alien',prix:120},
+  {id:'a_lion',emoji:'🦁',name:'Lion',prix:150},
+  {id:'a_prince',emoji:'🤴',name:'Prince',prix:150},
+  {id:'a_princess',emoji:'👸',name:'Princesse',prix:150},
+  {id:'a_dragon',emoji:'🐉',name:'Dragon',prix:250},
+  {id:'a_unicorn',emoji:'🦄',name:'Licorne',prix:250}
+];
+const THEMES=[
+  {id:'default',name:'Bleu',prix:0,accent:'#185FA5',bgAccent:'#E6F1FB',textAccent:'#0C447C'},
+  {id:'foret',name:'Forêt',prix:80,accent:'#2E7D32',bgAccent:'#E8F5E9',textAccent:'#1B5E20'},
+  {id:'soleil',name:'Soleil',prix:100,accent:'#F57C00',bgAccent:'#FFF3E0',textAccent:'#E65100'},
+  {id:'magie',name:'Magie',prix:120,accent:'#7E57C2',bgAccent:'#EDE7F6',textAccent:'#5E35B1'},
+  {id:'feu',name:'Feu',prix:120,accent:'#E24B4A',bgAccent:'#FDECEA',textAccent:'#B71C1C'},
+  {id:'bonbon',name:'Bonbon',prix:150,accent:'#EC407A',bgAccent:'#FCE4EC',textAccent:'#C2185B'}
+];
+function ownsItem(id){ return (profile.owned||[]).indexOf(id)>=0; }
+function applyTheme(id){
+  const th=THEMES.find(t=>t.id===id)||THEMES[0]; const r=document.documentElement.style;
+  r.setProperty('--accent',th.accent); r.setProperty('--bg-accent',th.bgAccent); r.setProperty('--text-accent',th.textAccent);
+}
+function openShop(){ renderShop(); show('screen-shop'); }
+function renderShop(){
+  const cn=document.getElementById('shop-coins'); if(cn) cn.textContent='🪙 '+(profile.coins||0)+' pièces';
+  const av=document.getElementById('shop-avatars');
+  if(av) av.innerHTML=AVATARS.map(a=>{
+    const owned=ownsItem(a.id), sel=(profile.avatar===a.emoji);
+    const act = owned ? (sel?'<span class="shop-sel">Choisi ✓</span>':'<span class="shop-choose">Choisir</span>') : ('<span class="shop-price">🪙 '+a.prix+'</span>');
+    return '<div class="shop-item'+(sel?' sel':'')+'" onclick="pickAvatar(\''+a.id+'\')"><div class="shop-emoji">'+a.emoji+'</div><div class="shop-name">'+a.name+'</div>'+act+'</div>';
+  }).join('');
+  const tm=document.getElementById('shop-themes');
+  if(tm) tm.innerHTML=THEMES.map(th=>{
+    const owned=ownsItem(th.id), sel=(profile.theme===th.id);
+    const act = owned ? (sel?'<span class="shop-sel">Choisi ✓</span>':'<span class="shop-choose">Choisir</span>') : ('<span class="shop-price">🪙 '+th.prix+'</span>');
+    return '<div class="shop-item'+(sel?' sel':'')+'" onclick="pickTheme(\''+th.id+'\')"><div class="shop-swatch" style="background:'+th.accent+'"></div><div class="shop-name">'+th.name+'</div>'+act+'</div>';
+  }).join('');
+}
+function pickAvatar(id){
+  const a=AVATARS.find(x=>x.id===id); if(!a) return;
+  if(ownsItem(id)){ profile.avatar=a.emoji; saveProfile(); renderShop(); renderHUD(); floatReward(a.emoji,'#185FA5'); return; }
+  if((profile.coins||0)<a.prix){ alert('Pas assez de pièces ! Il te manque '+(a.prix-(profile.coins||0))+' 🪙. Continue à jouer pour en gagner.'); return; }
+  if(!confirm('Débloquer '+a.emoji+' '+a.name+' pour '+a.prix+' pièces ?')) return;
+  profile.coins-=a.prix; profile.owned=profile.owned||[]; profile.owned.push(id); profile.avatar=a.emoji;
+  saveProfile(); renderShop(); renderHUD(); confetti(24); floatReward('Débloqué : '+a.emoji,'#C9961F');
+}
+function pickTheme(id){
+  const th=THEMES.find(x=>x.id===id); if(!th) return;
+  if(ownsItem(id)){ profile.theme=id; applyTheme(id); saveProfile(); renderShop(); floatReward('🎨 '+th.name,'#185FA5'); return; }
+  if((profile.coins||0)<th.prix){ alert('Pas assez de pièces ! Il te manque '+(th.prix-(profile.coins||0))+' 🪙.'); return; }
+  if(!confirm('Débloquer la couleur '+th.name+' pour '+th.prix+' pièces ?')) return;
+  profile.coins-=th.prix; profile.owned=profile.owned||[]; profile.owned.push(id); profile.theme=id; applyTheme(id);
+  saveProfile(); renderShop(); confetti(24); floatReward('🎨 '+th.name+' débloqué !','#C9961F');
 }
 
 function saveProgress(){
@@ -1549,6 +1674,9 @@ document.getElementById('card-sprint').addEventListener('click',()=>{
   renderSprintRecords('sprint-records'); show('screen-sprint-start');
 });
 document.getElementById('card-board').addEventListener('click',openBoard);
+document.getElementById('card-shop').addEventListener('click',openShop);
+document.getElementById('hud-avatar').addEventListener('click',openShop);
+document.getElementById('btn-shop-back').addEventListener('click',goToMenu);
 document.getElementById('btn-board-back').addEventListener('click',goToMenu);
 document.getElementById('btn-board-join').addEventListener('click',boardJoin);
 document.getElementById('btn-board-refresh').addEventListener('click',loadLeaderboard);
@@ -1586,6 +1714,7 @@ document.getElementById('hud-mute').addEventListener('click',toggleMute);
 /* ---------------- init ---------------- */
 try{
   loadProfile();
+  applyTheme(profile.theme||'default');
   loadCloud();
   cloudInit();
   state=freshState();
