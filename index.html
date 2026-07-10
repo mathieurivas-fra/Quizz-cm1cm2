@@ -201,6 +201,10 @@
   .hero-title{margin:0;font-size:19px;font-weight:800;line-height:1.2;}
   .game-card{transition:transform .1s,box-shadow .15s,border-color .15s;}
   @media(hover:hover){.game-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);border-color:var(--accent);}}
+  /* onglets du classement */
+  .board-tabs{display:flex;gap:8px;margin-bottom:12px;}
+  .board-tab{flex:1;}
+  .board-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
   /* avatars sur le podium/classement */
   .pod-ava{font-size:30px;line-height:1;}
   /* scénette cinématique de fin de niveau */
@@ -306,8 +310,6 @@
       <button class="btn-primary" id="btn-resume" style="margin-bottom:8px;">▶️ Reprendre l'aventure</button>
       <button class="btn-ghost" id="btn-newgame" style="width:100%;">Nouvelle partie</button>
     </div>
-    <p class="section-label">Choisis tes matières</p>
-    <div id="subject-grid"></div>
     <button class="btn-primary" id="btn-start">Commencer l'aventure</button>
   </div>
 
@@ -457,9 +459,13 @@
     </div>
 
     <div id="board-main" style="display:none">
-      <p class="board-me" id="board-me" style="font-size:13px;font-weight:600;color:var(--text-accent);background:var(--bg-accent);border-radius:10px;padding:10px 12px;margin:0 0 14px;"></p>
+      <p class="board-me" id="board-me" style="font-size:13px;font-weight:600;color:var(--text-accent);background:var(--bg-accent);border-radius:10px;padding:10px 12px;margin:0 0 12px;"></p>
+      <div class="board-tabs">
+        <button class="btn-ghost board-tab active" id="bt-aventure">🏰 Aventure</button>
+        <button class="btn-ghost board-tab" id="bt-sprint">⚡ Sprint</button>
+      </div>
       <div id="board-podium" class="podium" style="display:none"></div>
-      <p class="section-label">Classé par pièces 🪙</p>
+      <p class="section-label" id="board-sort-label">Classé par étoiles ⭐</p>
       <div id="board-list"></div>
       <div style="display:flex;gap:8px;margin-top:14px;">
         <button class="btn-ghost" id="btn-board-refresh">↻ Rafraîchir</button>
@@ -762,7 +768,67 @@ const BANK = [
 {m:"Histoire",c:"repères",q:"La Révolution française a eu lieu en :",o:["1515","1789","1918","1492"],a:1,d:3},
 {m:"Conjugaison",c:"présent",q:"'je (aller)' au présent, c'est :",o:["je vais","je vas","je alle","je vai"],a:0,d:1},
 {m:"Orthographe",c:"pluriel",q:"Le pluriel de 'un cheval' est :",o:["des chevals","des chevaux","des cheveaux","des chival"],a:1,d:2},
-{m:"Grammaire",c:"nature des mots",q:"Dans 'il marche rapidement', 'rapidement' est :",o:["un nom","un adverbe","un verbe","un adjectif"],a:1,d:2}
+{m:"Grammaire",c:"nature des mots",q:"Dans 'il marche rapidement', 'rapidement' est :",o:["un nom","un adverbe","un verbe","un adjectif"],a:1,d:2},
+
+/* ============ RENFORCEMENT NIVEAU CM2 ============ */
+{m:"Conjugaison",c:"imparfait",q:"'nous (chanter)' à l'imparfait :",o:["nous chantons","nous chantions","nous chanterons","nous chantâmes"],a:1,d:2},
+{m:"Conjugaison",c:"futur simple",q:"'tu (finir)' au futur simple :",o:["tu finis","tu finiras","tu finissais","tu finirais"],a:1,d:2},
+{m:"Conjugaison",c:"passé composé",q:"'elle (arriver)' au passé composé :",o:["elle arrivait","elle est arrivée","elle arrivera","elle arrive"],a:1,d:2},
+{m:"Conjugaison",c:"présent",q:"'vous (faire)' au présent :",o:["vous faisez","vous faites","vous faisiez","vous ferez"],a:1,d:2},
+{m:"Conjugaison",c:"imparfait",q:"'j'(être)' à l'imparfait :",o:["j'étais","je suis","je serai","je fus"],a:0,d:2},
+{m:"Conjugaison",c:"passé composé",q:"Dans 'ils ont mangé', l'auxiliaire est :",o:["être","avoir","aller","faire"],a:1,d:3},
+{m:"Conjugaison",c:"futur simple",q:"'nous (aller)' au futur simple :",o:["nous allons","nous irons","nous allions","nous allâmes"],a:1,d:3},
+{m:"Conjugaison",c:"passé simple",q:"'il (prendre)' au passé simple :",o:["il prenait","il prit","il prendra","il prend"],a:1,d:3},
+{m:"Orthographe",c:"homophones on/ont",q:"« Elles ___ gagné. »",o:["on","ont"],a:1,d:2},
+{m:"Orthographe",c:"homophones son/sont",q:"« Les enfants ___ contents. »",o:["son","sont"],a:1,d:2},
+{m:"Orthographe",c:"homophones ces/ses",q:"« Il range ___ affaires. » (les siennes)",o:["ces","ses"],a:1,d:2},
+{m:"Orthographe",c:"homophones et/est",q:"« Le chat ___ noir. »",o:["et","est"],a:1,d:2},
+{m:"Orthographe",c:"homophones c'est/s'est",q:"« Il ___ lavé les mains. »",o:["c'est","s'est"],a:1,d:3},
+{m:"Orthographe",c:"accord participe passé",q:"« Les fleurs que j'ai ___. » (cueillir)",o:["cueilli","cueillies","cueillis","cueillie"],a:1,d:3},
+{m:"Orthographe",c:"accord de l'adjectif",q:"« Des robes ___. » (bleu)",o:["bleu","bleus","bleues","bleue"],a:2,d:2},
+{m:"Orthographe",c:"homophones a/as/à",q:"« Tu ___ raison. »",o:["a","as","à"],a:1,d:2},
+{m:"Orthographe",c:"pluriel en -x",q:"Le pluriel de 'un bijou' est :",o:["des bijous","des bijoux","des bijoues","des bijow"],a:1,d:3},
+{m:"Grammaire",c:"COD/COI",q:"Dans 'Il parle à son ami', 'à son ami' est :",o:["COD","COI","sujet","attribut"],a:1,d:3},
+{m:"Grammaire",c:"compléments circonstanciels",q:"Dans 'Il dort dans sa chambre', 'dans sa chambre' est un CC de :",o:["temps","lieu","manière","but"],a:1,d:3},
+{m:"Grammaire",c:"propositions",q:"Une phrase avec deux verbes conjugués contient deux :",o:["sujets","propositions","compléments","adverbes"],a:1,d:3},
+{m:"Grammaire",c:"nature/fonction",q:"Dans 'La petite fille rit', 'petite' est un adjectif :",o:["attribut","épithète","possessif","numéral"],a:1,d:2},
+{m:"Grammaire",c:"pronoms",q:"Dans 'Je les vois', 'les' est un pronom :",o:["possessif","personnel","démonstratif","relatif"],a:1,d:3},
+{m:"Grammaire",c:"conjonctions",q:"'mais, ou, et, donc' sont des conjonctions de :",o:["subordination","coordination","liaison","négation"],a:1,d:3},
+{m:"Calcul",c:"grands nombres",q:"Dans 45 632, le chiffre des centaines est :",o:["4","5","6","3"],a:2,d:2},
+{m:"Calcul",c:"priorités opératoires",q:"Combien font 3 + 4 × 2 ?",o:["14","11","10","24"],a:1,d:3},
+{m:"Calcul",c:"fractions",q:"Combien font 3/5 + 1/5 ?",o:["4/5","4/10","3/10","1"],a:0,d:3},
+{m:"Calcul",c:"nombres décimaux",q:"Combien font 2,5 × 10 ?",o:["25","250","2,50","0,25"],a:0,d:2},
+{m:"Calcul",c:"proportionnalité",q:"Si 1 gâteau coûte 3 €, 4 gâteaux coûtent :",o:["7 €","12 €","9 €","34 €"],a:1,d:2},
+{m:"Calcul",c:"division",q:"Combien font 125 ÷ 5 ?",o:["25","20","35","15"],a:0,d:3},
+{m:"Calcul",c:"comparaison de décimaux",q:"Quel est le plus petit : 0,7 ; 0,07 ; 0,77 ?",o:["0,7","0,07","0,77","ils sont égaux"],a:1,d:3},
+{m:"Calcul",c:"pourcentage",q:"50 % de 80, c'est :",o:["40","20","80","160"],a:0,d:3},
+{m:"Mesures",c:"conversions",q:"3,2 km = combien de mètres ?",o:["320 m","3200 m","32 m","32000 m"],a:1,d:3},
+{m:"Mesures",c:"aire",q:"L'aire d'un carré de côté 6 cm est :",o:["24 cm²","36 cm²","12 cm²","30 cm²"],a:1,d:3},
+{m:"Mesures",c:"durées",q:"Un film dure 1 h 45 min. En minutes, cela fait :",o:["145 min","105 min","95 min","115 min"],a:1,d:3},
+{m:"Mesures",c:"masses",q:"2,5 kg = combien de grammes ?",o:["250 g","2500 g","25 g","25000 g"],a:1,d:2},
+{m:"Mesures",c:"contenances",q:"1,5 L = combien de mL ?",o:["150 mL","1500 mL","15 mL","15000 mL"],a:1,d:3},
+{m:"Géométrie",c:"angles",q:"Un angle droit mesure :",o:["45°","90°","180°","60°"],a:1,d:2},
+{m:"Géométrie",c:"quadrilatères",q:"Un quadrilatère à 4 côtés égaux et 4 angles droits est un :",o:["rectangle","carré","losange","trapèze"],a:1,d:2},
+{m:"Géométrie",c:"quadrilatères",q:"Un parallélogramme a ses côtés opposés :",o:["perpendiculaires","parallèles","inégaux","courbes"],a:1,d:3},
+{m:"Géométrie",c:"cercle",q:"Le segment qui relie le centre du cercle à un point du cercle est :",o:["le diamètre","le rayon","la corde","la hauteur"],a:1,d:3},
+{m:"Géométrie",c:"solides",q:"Combien de faces a un cube ?",o:["4","6","8","12"],a:1,d:2},
+{m:"Sciences",c:"corps humain",q:"La digestion des aliments commence dans :",o:["l'estomac","la bouche","l'intestin","les poumons"],a:1,d:3},
+{m:"Sciences",c:"le vivant",q:"Les êtres vivants qui fabriquent leur propre nourriture sont :",o:["les animaux","les végétaux","les champignons","les humains"],a:1,d:3},
+{m:"Sciences",c:"énergie",q:"Laquelle est une énergie renouvelable ?",o:["le pétrole","le charbon","le vent (éolien)","le gaz"],a:2,d:3},
+{m:"Sciences",c:"astronomie",q:"La Lune tourne autour de :",o:["le Soleil","la Terre","Mars","Jupiter"],a:1,d:2},
+{m:"Histoire",c:"repères",q:"En quelle année a eu lieu la prise de la Bastille ?",o:["1789","1515","1914","1492"],a:0,d:3},
+{m:"Histoire",c:"Temps modernes",q:"Christophe Colomb atteint l'Amérique en :",o:["1492","1789","1000","1600"],a:0,d:3},
+{m:"Histoire",c:"XXe siècle",q:"La Première Guerre mondiale se termine en :",o:["1918","1945","1870","1900"],a:0,d:3},
+{m:"Histoire",c:"Antiquité",q:"Jules César était un chef :",o:["grec","romain","égyptien","gaulois"],a:1,d:2},
+{m:"Géographie",c:"la France",q:"La France métropolitaine compte environ :",o:["7 millions d'habitants","67 millions d'habitants","670 millions","1 million"],a:1,d:3},
+{m:"Géographie",c:"Europe",q:"Quel pays a une frontière avec la France ?",o:["l'Espagne","le Canada","le Japon","l'Égypte"],a:0,d:2},
+{m:"Géographie",c:"les océans",q:"Le plus grand océan du monde est :",o:["l'Atlantique","le Pacifique","l'Indien","l'Arctique"],a:1,d:3},
+{m:"Vocabulaire",c:"polysémie",q:"Le mot 'glace' peut désigner un dessert OU :",o:["un miroir","une voiture","un livre","un arbre"],a:0,d:2},
+{m:"Vocabulaire",c:"synonymes",q:"Un synonyme de 'courageux' est :",o:["peureux","brave","paresseux","faible"],a:1,d:3},
+{m:"Vocabulaire",c:"contraires",q:"Le contraire de 'ancien' est :",o:["vieux","nouveau","antique","usé"],a:1,d:2},
+{m:"Anglais",c:"vocabulaire",q:"« Monday » signifie :",o:["dimanche","lundi","mardi","mois"],a:1,d:2},
+{m:"Anglais",c:"verbe to be",q:"« They ___ happy. »",o:["is","am","are","be"],a:2,d:2},
+{m:"Anglais",c:"vocabulaire",q:"« a book » signifie :",o:["une boîte","un livre","une balle","un bureau"],a:1,d:2}
 ];
 
 const subjects = [...new Set(BANK.map(q=>q.m))];
@@ -776,8 +842,8 @@ const YOU_HP = 3;                 // erreurs tolérées au boss
 
 // difficulté ciblée selon le niveau (1..19) -> 1,2,3
 function levelDifficulty(lvl){
-  if(lvl<=6) return 1;
-  if(lvl<=13) return 2;
+  if(lvl<=4) return 1;
+  if(lvl<=10) return 2;
   return 3;
 }
 
@@ -801,17 +867,9 @@ function freshState(){
 
 /* ---------------- accueil ---------------- */
 function buildSubjectGrid(){
-  const grid=document.getElementById('subject-grid');
-  grid.innerHTML='';
-  subjects.forEach(s=>{
-    const div=document.createElement('div');
-    div.className='subj-chip'; div.textContent=s; div.style.opacity=1;
-    div.addEventListener('click',()=>{
-      if(state.selected.has(s)){state.selected.delete(s);div.style.opacity=0.35;}
-      else{state.selected.add(s);div.style.opacity=1;}
-    });
-    grid.appendChild(div);
-  });
+  // le choix des matières a été retiré : toutes les matières sont toujours actives
+  const grid=document.getElementById('subject-grid'); if(grid) grid.innerHTML='';
+  if(state) state.selected=new Set(subjects);
 }
 
 /* ---------------- sélection des questions ---------------- */
@@ -938,7 +996,7 @@ function show(id){
 }
 
 function startAdventure(){
-  if(state.selected.size===0){alert('Choisis au moins une matière.');return;}
+  state.selected=new Set(subjects);   // toutes les matières
   sessionStreak=0;
   goToMap();
 }
@@ -1564,46 +1622,57 @@ function boardJoin(){
   document.getElementById('board-main').style.display='block';
   loadLeaderboard();
 }
-function renderPodium(rows){
+let boardRows=[], boardTab='aventure';
+function setBoardTab(t){ boardTab=t; const a=document.getElementById('bt-aventure'), s=document.getElementById('bt-sprint'); if(a)a.classList.toggle('active',t==='aventure'); if(s)s.classList.toggle('active',t==='sprint'); renderBoard(); }
+function renderPodium(rows,tab){
   const pod=document.getElementById('board-podium'); if(!pod) return;
   if(!rows || !rows.length){ pod.innerHTML=''; pod.style.display='none'; return; }
   pod.style.display='flex';
-  const order=[1,0,2];                 // colonnes affichées : 2e, 1er, 3e
-  const medals=['🥈','🥇','🥉'], heights=['64px','88px','48px'], colors=['#B8B8B8','#C9961F','#CD7F32'];
+  const order=[1,0,2], medals=['🥈','🥇','🥉'], heights=['64px','88px','48px'], colors=['#B8B8B8','#C9961F','#CD7F32'];
   let h='';
   order.forEach(function(ri,pos){
-    const r=rows[ri]; if(!r){ h+='<div class="pod" style="opacity:.25"><div class="pod-top">'+medals[pos]+'</div><div class="pod-name">—</div><div class="pod-coins">&nbsp;</div><div class="pod-bar" style="height:'+heights[pos]+';background:'+colors[pos]+'"></div></div>'; return; }
-    h+='<div class="pod"><div class="pod-top">'+medals[pos]+'</div><div class="pod-ava">'+(r.avatar||'🧒')+'</div><div class="pod-name">'+escapeHtml(r.pseudo||'?')+'</div><div class="pod-coins">🪙 '+(r.coins||0)+'</div><div class="pod-bar" style="height:'+heights[pos]+';background:'+colors[pos]+'">'+(ri+1)+'</div></div>';
+    const r=rows[ri];
+    if(!r){ h+='<div class="pod" style="opacity:.25"><div class="pod-top">'+medals[pos]+'</div><div class="pod-ava">·</div><div class="pod-name">—</div><div class="pod-coins">&nbsp;</div><div class="pod-bar" style="height:'+heights[pos]+';background:'+colors[pos]+'"></div></div>'; return; }
+    const val = tab==='sprint' ? ('⚡ '+fmtTime(r.sprintMs)) : ('⭐ '+(r.stars||0));
+    h+='<div class="pod"><div class="pod-top">'+medals[pos]+'</div><div class="pod-ava">'+(r.avatar||'🧒')+'</div><div class="pod-name">'+escapeHtml(r.pseudo||'?')+'</div><div class="pod-coins">'+val+'</div><div class="pod-bar" style="height:'+heights[pos]+';background:'+colors[pos]+'">'+(ri+1)+'</div></div>';
   });
   pod.innerHTML=h;
 }
 function loadLeaderboard(){
   if(!cloudReady()||!cloud.groupe) return;
-  const list=document.getElementById('board-list');
-  const meBox=document.getElementById('board-me');
-  meBox.textContent='Toi : '+cloud.pseudo+' — 🪙 '+(profile.coins||0)+' · ⭐ '+(profile.stars||0)+'   (groupe : '+cloud.groupe+')';
-  list.innerHTML='<p style="font-size:14px;color:var(--text-secondary)">Chargement…</p>';
-  db.collection('groupes').doc(cloud.groupe).collection('joueurs').orderBy('coins','desc').limit(50).get()
-    .then(function(snap){
-      const rows=[]; snap.forEach(function(d){ rows.push(d.data()); });
-      renderPodium(rows);
-      if(!rows.length){ list.innerHTML='<p style="font-size:14px;color:var(--text-secondary)">Personne dans ce groupe pour l\'instant. Sois le premier ! 🎉</p>'; return; }
-      const meKey=pseudoKey(cloud.pseudo); let h='';
-      if(rows.length>=2 && pseudoKey(rows[0].pseudo||'')===meKey) unlockBadge('group_champ');
-      rows.forEach(function(r,i){
-        const mine=(pseudoKey(r.pseudo||'')===meKey);
-        const medal=['🥇','🥈','🥉'][i]||((i+1)+'.');
-        const sp=r.sprintMs?(' · ⚡ '+fmtTime(r.sprintMs)):'';
-        h+='<div class="rec-row'+(mine?' rec-top':'')+'">'
-          +'<span class="rec-rank">'+medal+'</span>'
-          +'<span class="rec-name">'+(r.avatar||'🧒')+' '+escapeHtml(r.pseudo||'?')+(mine?' ⭐':'')+'</span>'
-          +'<span class="rec-time">🪙 '+(r.coins||0)+'</span>'
-          +'<span class="rec-meta">⭐ '+(r.stars||0)+sp+'</span>'
-          +'</div>';
-      });
-      list.innerHTML=h;
-    })
+  const list=document.getElementById('board-list'); list.innerHTML='<p style="font-size:14px;color:var(--text-secondary)">Chargement…</p>';
+  db.collection('groupes').doc(cloud.groupe).collection('joueurs').limit(100).get()
+    .then(function(snap){ boardRows=[]; snap.forEach(function(d){ boardRows.push(d.data()); }); renderBoard(); })
     .catch(function(e){ list.innerHTML='<p style="font-size:14px;color:var(--danger-text)">Impossible de charger le classement (connexion Internet ou règles Firestore à vérifier).</p>'; });
+}
+function renderBoard(){
+  const list=document.getElementById('board-list'), meBox=document.getElementById('board-me'), lbl=document.getElementById('board-sort-label');
+  const meKey=pseudoKey(cloud.pseudo);
+  let rows=boardRows.slice();
+  if(boardTab==='sprint'){
+    if(lbl) lbl.textContent='Classé par temps ⚡ (le plus rapide gagne)';
+    rows=rows.filter(function(r){return r.sprintMs!=null;}).sort(function(a,b){return a.sprintMs-b.sprintMs;});
+    if(meBox) meBox.textContent='Toi : '+cloud.pseudo+' — ⚡ '+(profile.bestSprintMs?fmtTime(profile.bestSprintMs):'aucun temps')+'   (groupe : '+cloud.groupe+')';
+  } else {
+    if(lbl) lbl.textContent='Classé par étoiles ⭐';
+    rows.sort(function(a,b){ return (b.stars||0)-(a.stars||0); });
+    if(meBox) meBox.textContent='Toi : '+cloud.pseudo+' — ⭐ '+(profile.stars||0)+' étoiles   (groupe : '+cloud.groupe+')';
+    if(rows.length>=2 && pseudoKey(rows[0].pseudo||'')===meKey) unlockBadge('group_champ');
+  }
+  renderPodium(rows, boardTab);
+  if(!rows.length){ list.innerHTML='<p style="font-size:14px;color:var(--text-secondary)">'+(boardTab==='sprint'?'Aucun temps de Sprint dans ce groupe. Lance un Sprint !':'Personne dans ce groupe. Sois le premier ! 🎉')+'</p>'; return; }
+  let h='';
+  rows.forEach(function(r,i){
+    const mine=(pseudoKey(r.pseudo||'')===meKey);
+    const medal=['🥇','🥈','🥉'][i]||((i+1)+'.');
+    const val = boardTab==='sprint' ? ('⚡ '+fmtTime(r.sprintMs)) : ('⭐ '+(r.stars||0));
+    h+='<div class="rec-row'+(mine?' rec-top':'')+'">'
+      +'<span class="rec-rank">'+medal+'</span>'
+      +'<span class="rec-name">'+(r.avatar||'🧒')+' '+escapeHtml(r.pseudo||'?')+(mine?' ⭐':'')+'</span>'
+      +'<span class="rec-time">'+val+'</span>'
+      +'</div>';
+  });
+  list.innerHTML=h;
 }
 
 /* ================= BOUTIQUE (avatars + couleurs) ================= */
@@ -1741,7 +1810,7 @@ function loadSave(){
 function clearSave(){ if(STORAGE_OK){try{localStorage.removeItem(SAVE_KEY);}catch(e){}} }
 function applySave(d){
   state=freshState();
-  state.selected=new Set(d.selected&&d.selected.length?d.selected:subjects);
+  state.selected=new Set(subjects);   // toutes les matières (choix retiré)
   state.currentLevel=d.currentLevel||1;
   state.maxUnlocked=d.maxUnlocked||state.currentLevel;
   state.score=d.score||0; state.total=d.total||0;
@@ -1835,6 +1904,8 @@ document.getElementById('btn-parent-reset').addEventListener('click',adminAction
 document.getElementById('btn-board-back').addEventListener('click',goToMenu);
 document.getElementById('btn-board-join').addEventListener('click',boardJoin);
 document.getElementById('btn-board-refresh').addEventListener('click',loadLeaderboard);
+document.getElementById('bt-aventure').addEventListener('click',function(){ setBoardTab('aventure'); });
+document.getElementById('bt-sprint').addEventListener('click',function(){ setBoardTab('sprint'); });
 document.getElementById('btn-board-edit').addEventListener('click',()=>{
   document.getElementById('board-setup').style.display='block';
   document.getElementById('board-main').style.display='none';
