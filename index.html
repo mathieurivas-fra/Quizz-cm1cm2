@@ -218,6 +218,14 @@
   .cine-star.on{color:var(--gold);transform:scale(0);animation:starpop .45s ease forwards;}
   @keyframes starpop{0%{transform:scale(0) rotate(-30deg)}70%{transform:scale(1.35) rotate(10deg)}100%{transform:scale(1) rotate(0)}}
   .cine-reward{font-size:19px;font-weight:800;color:var(--gold);margin-bottom:6px;}
+  .cine-castle{position:absolute;bottom:6px;right:50px;line-height:1;opacity:.85;}
+  .cine-boss{font-size:13px;font-weight:700;color:var(--text-secondary);margin-top:2px;}
+  .cine-boss.on{color:var(--danger-text);font-size:15px;}
+  .cine-sub{font-size:14px;color:var(--text-secondary);line-height:1.4;margin:2px 0 4px;}
+  .cine-boss-scene{height:120px;display:flex;align-items:center;justify-content:center;gap:12px;background:linear-gradient(160deg,#2b2b3a,#4a3b5a);}
+  .cine-castle-big{font-size:60px;animation:herobob 3s ease-in-out infinite;}
+  .cine-dragon{font-size:56px;transform:scale(0);animation:dragonin .7s .2s ease forwards;}
+  @keyframes dragonin{0%{transform:scale(0) rotate(-20deg)}70%{transform:scale(1.25) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
 </style>
 </head>
 <body>
@@ -283,6 +291,7 @@
     </div>
     <p class="section-label" style="margin-top:6px;">🏅 Mes trophées <span style="font-weight:400;color:var(--text-muted);font-size:12px;">— touche un trophée pour voir comment le gagner</span></p>
     <div id="badges-wrap"></div>
+    <button class="btn-ghost" id="btn-parent" style="width:100%;margin-top:16px;">👨‍👩‍👧 Espace parent</button>
   </div>
 
   <!-- ========== ACCUEIL AVENTURE ========== -->
@@ -473,20 +482,29 @@
     <div id="shop-themes"></div>
   </div>
 
+  <!-- ========== ESPACE PARENT ========== -->
+  <div id="screen-parent">
+    <div class="map-head">
+      <p class="map-title">👨‍👩‍👧 Espace parent</p>
+      <button class="btn-ghost" id="btn-parent-back">← Menu</button>
+    </div>
+    <p class="subtitle">Suivi des progrès de l'enfant sur cet appareil.</p>
+    <p class="section-label">Résumé</p>
+    <div id="parent-summary"></div>
+    <p class="section-label" style="margin-top:16px;">Compétences à travailler en priorité</p>
+    <div id="parent-weak"></div>
+    <p class="section-label" style="margin-top:16px;">Réussite par matière</p>
+    <div id="parent-subjects"></div>
+    <p class="section-label" style="margin-top:18px;">🔐 Admin — réinitialiser</p>
+    <p class="subtitle">Définis un code admin (1re fois), puis retape-le pour remettre à zéro les scores de cet appareil (pièces, étoiles, trophées, stats, progression). Les avatars et couleurs achetés sont conservés.</p>
+    <input id="parent-admincode" type="password" placeholder="Code admin" autocomplete="off"
+      style="width:100%;padding:12px;font-size:16px;font-family:inherit;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;box-sizing:border-box;">
+    <button class="btn-primary" id="btn-parent-reset" style="background:var(--danger-border);border-color:var(--danger-border);">🗑️ Réinitialiser les scores de cet appareil</button>
+  </div>
+
 </div>
 
-<div id="cine">
-  <div class="cine-inner">
-    <div class="cine-scene">
-      <span class="cine-flag-in">🏁</span>
-      <span class="cine-hero" id="cine-hero">🧒</span>
-    </div>
-    <div class="cine-title" id="cine-title">Niveau réussi !</div>
-    <div class="cine-stars" id="cine-stars"></div>
-    <div class="cine-reward" id="cine-reward"></div>
-    <button class="btn-primary" id="cine-btn" style="max-width:220px;margin:8px auto 0;">Continuer →</button>
-  </div>
-</div>
+<div id="cine"><div class="cine-inner" id="cine-body"></div></div>
 
 <div id="float-layer"></div>
 
@@ -913,7 +931,7 @@ function renderMap(){
 
 /* ---------------- navigation écrans ---------------- */
 function show(id){
-  ['screen-menu','screen-start','screen-map','screen-quiz','screen-boss','screen-end','screen-sprint-start','screen-sprint','screen-sprint-end','screen-board','screen-shop']
+  ['screen-menu','screen-start','screen-map','screen-quiz','screen-boss','screen-end','screen-sprint-start','screen-sprint','screen-sprint-end','screen-board','screen-shop','screen-parent']
     .forEach(s=>document.getElementById(s).style.display='none');
   document.getElementById(id).style.display='block';
   renderHUD();
@@ -978,6 +996,11 @@ function loadLevelQuestion(){
 function recordStat(c,correct){
   if(!state.competenceStats[c]) state.competenceStats[c]={right:0,wrong:0};
   state.competenceStats[c][correct?'right':'wrong']++;
+  // cumul persistant (pour l'espace parent), gardé d'une partie à l'autre
+  if(!profile.compStats) profile.compStats={};
+  if(!profile.compStats[c]) profile.compStats[c]={right:0,wrong:0};
+  profile.compStats[c][correct?'right':'wrong']++;
+  saveProfile();
 }
 function answerLevel(i){
   const {q}=state.current;
@@ -1042,21 +1065,41 @@ function completeLevel(stars){
   saveProgress();
   playCine(lvl,s,gain);            // petite scénette, puis retour à la carte
 }
-let cineTimer=null;
+let cineTimer=null, cinePending=null;
+function cineGo(){ clearTimeout(cineTimer); document.getElementById('cine').classList.remove('show'); const cb=cinePending; cinePending=null; if(cb) cb(); }
 function playCine(lvl,stars,gain){
-  const ov=document.getElementById('cine');
-  document.getElementById('cine-hero').textContent=profile.avatar||'🧒';
-  document.getElementById('cine-title').textContent='Niveau '+lvl+' réussi !';
-  const sc=document.getElementById('cine-stars'); sc.innerHTML='';
-  for(let i=0;i<3;i++){ const st=document.createElement('span'); st.className='cine-star'+(i<stars?' on':''); st.textContent='★'; st.style.animationDelay=(0.9+i*0.28)+'s'; sc.appendChild(st); }
-  document.getElementById('cine-reward').textContent='+'+gain+' 🪙';
-  ov.classList.add('show');
-  clearTimeout(cineTimer); cineTimer=setTimeout(endCine,2700);
+  const rem=BOSS_LEVEL-state.currentLevel;
+  const bossHint = (state.currentLevel===BOSS_LEVEL)
+    ? '<div class="cine-boss on">🏰 Prochaine étape : LE BOSS ! ⚔️</div>'
+    : '<div class="cine-boss">🏰 Plus que '+rem+' niveau'+(rem>1?'x':'')+' avant le château</div>';
+  const castleSize=22+Math.round((state.currentLevel/BOSS_LEVEL)*22);
+  let starsH=''; for(let i=0;i<3;i++){ starsH+='<span class="cine-star'+(i<stars?' on':'')+'" style="animation-delay:'+(0.9+i*0.28)+'s">★</span>'; }
+  document.getElementById('cine-body').innerHTML=
+    '<div class="cine-scene"><span class="cine-castle" style="font-size:'+castleSize+'px">🏰</span><span class="cine-flag-in">🏁</span><span class="cine-hero">'+(profile.avatar||'🧒')+'</span></div>'
+    +'<div class="cine-title">Niveau '+lvl+' réussi !</div>'
+    +'<div class="cine-stars">'+starsH+'</div>'
+    +'<div class="cine-reward">+'+gain+' 🪙</div>'
+    +bossHint
+    +'<button class="btn-primary" style="max-width:220px;margin:10px auto 0;" onclick="cineGo()">Continuer →</button>';
+  cinePending=goToMap;
+  document.getElementById('cine').classList.add('show');
+  clearTimeout(cineTimer); cineTimer=setTimeout(cineGo,2900);
 }
-function endCine(){ clearTimeout(cineTimer); document.getElementById('cine').classList.remove('show'); goToMap(); }
+function playBossIntro(then){
+  document.getElementById('cine-body').innerHTML=
+    '<div class="cine-scene cine-boss-scene"><span class="cine-castle-big">🏰</span><span class="cine-dragon">🐉</span></div>'
+    +'<div class="cine-title" style="color:var(--danger-text)">⚔️ Le Boss du Château !</div>'
+    +'<div class="cine-sub">Le Dragon Gardien t\'attend. Réponds juste pour lui retirer des cœurs. Prêt&nbsp;?</div>'
+    +'<button class="btn-primary" style="max-width:220px;margin:10px auto 0;background:var(--danger-border);border-color:var(--danger-border)" onclick="cineGo()">Au combat ! ⚔️</button>';
+  soundBoss(); cinePending=then;
+  document.getElementById('cine').classList.add('show');
+  clearTimeout(cineTimer); cineTimer=setTimeout(cineGo,3200);
+}
+function soundBoss(){ beep([160,130,110,98],0.2); }
 
 /* ---------------- BOSS ---------------- */
-function startBoss(){
+function startBoss(){ playBossIntro(_startBossReal); }
+function _startBossReal(){
   state.bossHp=BOSS_HP; state.youHp=YOU_HP;
   show('screen-boss');
   loadBossQuestion();
@@ -1364,7 +1407,7 @@ const STORAGE_OK=hasStorage();
 
 /* ================= PROFIL / RÉCOMPENSES ================= */
 const PROFILE_KEY='revisions-profil-v1';
-let profile={coins:0,stars:0,badges:[],muted:false,bestStreak:0,totalCorrect:0,bestSprintMs:null,avatar:'🧒',theme:'default',owned:['a_kid','default']};
+let profile={coins:0,stars:0,badges:[],muted:false,bestStreak:0,totalCorrect:0,bestSprintMs:null,avatar:'🧒',theme:'default',owned:['a_kid','default'],compStats:{},adminHash:null};
 let sessionStreak=0;
 function loadProfile(){ if(!STORAGE_OK) return; try{const r=localStorage.getItem(PROFILE_KEY); if(r){profile=Object.assign(profile,JSON.parse(r)); if(!Array.isArray(profile.badges)) profile.badges=[];}}catch(e){} }
 function saveProfile(){ if(STORAGE_OK){ try{localStorage.setItem(PROFILE_KEY,JSON.stringify(profile));}catch(e){} } cloudSyncSoon(); }
@@ -1626,6 +1669,53 @@ function pickTheme(id){
   saveProfile(); renderShop(); confetti(24); floatReward('🎨 '+th.name+' débloqué !','#C9961F');
 }
 
+/* ================= ESPACE PARENT + RÉINITIALISATION ================= */
+async function sha256(s){ const b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join(''); }
+function openParent(){ renderParent(); show('screen-parent'); }
+function renderParent(){
+  const cs=profile.compStats||{};
+  let totR=0,totW=0; Object.keys(cs).forEach(function(c){ totR+=cs[c].right||0; totW+=cs[c].wrong||0; });
+  const tot=totR+totW;
+  document.getElementById('parent-summary').innerHTML=
+    '<div class="row-card"><span>Questions répondues</span><span>'+tot+'</span></div>'
+    +'<div class="row-card"><span>Taux de réussite</span><span>'+(tot?Math.round(100*totR/tot):0)+' %</span></div>'
+    +'<div class="row-card"><span>Pièces · Étoiles</span><span>🪙 '+(profile.coins||0)+' · ⭐ '+(profile.stars||0)+'</span></div>'
+    +'<div class="row-card"><span>Trophées</span><span>'+((profile.badges||[]).length)+' / '+BADGES.length+'</span></div>'
+    +'<div class="row-card"><span>Meilleur sprint</span><span>'+(profile.bestSprintMs?fmtTime(profile.bestSprintMs):'—')+'</span></div>';
+  const weak=Object.keys(cs).map(function(c){return [c,cs[c]];})
+    .filter(function(e){ return e[1].wrong>0 && (e[1].right+e[1].wrong)>=2; })
+    .sort(function(a,b){ return (b[1].wrong/(b[1].wrong+b[1].right))-(a[1].wrong/(a[1].wrong+a[1].right)); }).slice(0,8);
+  document.getElementById('parent-weak').innerHTML = weak.length
+    ? weak.map(function(e){ return '<div class="row-card row-weak"><span>'+e[0]+'</span><span>'+e[1].wrong+' err. / '+(e[1].right+e[1].wrong)+'</span></div>'; }).join('')
+    : '<p style="font-size:14px;color:var(--text-secondary)">Pas encore assez de données. Joue quelques parties !</p>';
+  const compToSubj={}; BANK.forEach(function(q){ compToSubj[q.c]=q.m; });
+  const agg={}; Object.keys(cs).forEach(function(c){ const m=compToSubj[c]||'Autre'; if(!agg[m])agg[m]={right:0,wrong:0}; agg[m].right+=cs[c].right; agg[m].wrong+=cs[c].wrong; });
+  const rows=Object.keys(agg).map(function(m){return [m,agg[m]];})
+    .sort(function(a,b){ const ra=a[1].right/((a[1].right+a[1].wrong)||1), rb=b[1].right/((b[1].right+b[1].wrong)||1); return ra-rb; });
+  document.getElementById('parent-subjects').innerHTML = rows.length
+    ? rows.map(function(e){ const t=e[1].right+e[1].wrong; const pct=t?Math.round(100*e[1].right/t):0; return '<div class="row-card"><span>'+e[0]+'</span><span>'+pct+' % ('+e[1].right+'/'+t+')</span></div>'; }).join('')
+    : '<p style="font-size:14px;color:var(--text-secondary)">—</p>';
+}
+async function adminAction(){
+  const inp=document.getElementById('parent-admincode');
+  const code=(inp.value||'').trim();
+  if(code.length<4){ alert('Choisis un code admin d\'au moins 4 caractères.'); return; }
+  const h=await sha256(code);
+  if(!profile.adminHash){
+    if(!confirm('Aucun code admin défini. Enregistrer « '+code+' » comme code admin (parent) sur cet appareil ?')) return;
+    profile.adminHash=h; saveProfile(); inp.value='';
+    alert('Code admin enregistré ✅\nRetape ce code puis clique « Réinitialiser » pour remettre les scores à zéro.');
+    return;
+  }
+  if(profile.adminHash!==h){ alert('Code admin incorrect.'); return; }
+  if(!confirm('Remettre à ZÉRO les scores de cet appareil ?\n\n(pièces, étoiles, trophées, statistiques et progression de l\'aventure — les avatars et couleurs achetés sont conservés)')) return;
+  profile.coins=0; profile.stars=0; profile.badges=[]; profile.compStats={}; profile.bestSprintMs=null; profile.bestStreak=0; profile.totalCorrect=0;
+  saveProfile(); clearSave(); state=freshState(); sessionStreak=0;
+  cloudSync();                       // met à jour le classement (zéros) si connecté
+  renderHUD(); renderBadges(); renderParent(); inp.value='';
+  alert('Scores réinitialisés ✅');
+}
+
 function saveProgress(){
   if(!STORAGE_OK) return;
   try{
@@ -1739,7 +1829,9 @@ document.getElementById('card-board').addEventListener('click',openBoard);
 document.getElementById('card-shop').addEventListener('click',openShop);
 document.getElementById('hud-avatar').addEventListener('click',openShop);
 document.getElementById('btn-shop-back').addEventListener('click',goToMenu);
-document.getElementById('cine-btn').addEventListener('click',endCine);
+document.getElementById('btn-parent').addEventListener('click',openParent);
+document.getElementById('btn-parent-back').addEventListener('click',goToMenu);
+document.getElementById('btn-parent-reset').addEventListener('click',adminAction);
 document.getElementById('btn-board-back').addEventListener('click',goToMenu);
 document.getElementById('btn-board-join').addEventListener('click',boardJoin);
 document.getElementById('btn-board-refresh').addEventListener('click',loadLeaderboard);
