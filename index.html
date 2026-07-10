@@ -202,8 +202,8 @@
   .game-card{transition:transform .1s,box-shadow .15s,border-color .15s;}
   @media(hover:hover){.game-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);border-color:var(--accent);}}
   /* onglets du classement */
-  .board-tabs{display:flex;gap:8px;margin-bottom:12px;}
-  .board-tab{flex:1;padding:8px 6px;}
+  .board-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+  .board-tab{flex:1;min-width:70px;padding:8px 4px;font-size:13px;}
   #tour-options{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
   #tour-options button{text-align:left;padding:13px 14px;font-size:16px;}
   /* animation de la tour */
@@ -520,7 +520,7 @@
       <p class="subtitle">Rejoins le classement de ton groupe : choisis un <b>pseudo</b> et entre le <b>code de groupe</b> (le même mot secret pour toute ta famille — demande-le à un adulte).</p>
       <input id="board-pseudo" type="text" maxlength="16" placeholder="Ton pseudo" autocomplete="off"
         style="width:100%;padding:12px;font-size:16px;font-family:inherit;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;box-sizing:border-box;">
-      <input id="board-groupe" type="text" maxlength="40" placeholder="Code de groupe (ex. RIVAS2026)" autocomplete="off"
+      <input id="board-groupe" type="password" maxlength="40" placeholder="Code secret du groupe" autocomplete="new-password" autocapitalize="characters" autocorrect="off" spellcheck="false"
         style="width:100%;padding:12px;font-size:16px;font-family:inherit;border:1px solid var(--border);border-radius:10px;margin-bottom:12px;box-sizing:border-box;">
       <button class="btn-primary" id="btn-board-join">Rejoindre le classement</button>
     </div>
@@ -530,6 +530,7 @@
       <div class="board-tabs">
         <button class="btn-ghost board-tab active" id="bt-aventure">🏰 Aventure</button>
         <button class="btn-ghost board-tab" id="bt-tour">🗼 Tour</button>
+        <button class="btn-ghost board-tab" id="bt-monster">👾 Chasse</button>
         <button class="btn-ghost board-tab" id="bt-sprint">⚡ Sprint</button>
       </div>
       <div id="board-podium" class="podium" style="display:none"></div>
@@ -1665,6 +1666,7 @@ function cloudSync(){
       badges:(profile.badges||[]).length,
       sprintMs: profile.bestSprintMs?Math.floor(profile.bestSprintMs):null,
       tower: Math.floor(profile.bestTower||0),
+      monster: Math.floor(profile.bestMonster||0),
       maj:firebase.firestore.FieldValue.serverTimestamp()
     },{merge:true}).catch(function(){});
   }catch(e){}
@@ -1694,7 +1696,7 @@ function boardJoin(){
   loadLeaderboard();
 }
 let boardRows=[], boardTab='aventure';
-function setBoardTab(t){ boardTab=t; ['aventure','tour','sprint'].forEach(function(k){ const b=document.getElementById('bt-'+k); if(b) b.classList.toggle('active',t===k); }); renderBoard(); }
+function setBoardTab(t){ boardTab=t; ['aventure','tour','monster','sprint'].forEach(function(k){ const b=document.getElementById('bt-'+k); if(b) b.classList.toggle('active',t===k); }); renderBoard(); }
 function renderPodium(rows,tab){
   const pod=document.getElementById('board-podium'); if(!pod) return;
   if(!rows || !rows.length){ pod.innerHTML=''; pod.style.display='none'; return; }
@@ -1704,7 +1706,7 @@ function renderPodium(rows,tab){
   order.forEach(function(ri,pos){
     const r=rows[ri];
     if(!r){ h+='<div class="pod" style="opacity:.25"><div class="pod-top">'+medals[pos]+'</div><div class="pod-ava">·</div><div class="pod-name">—</div><div class="pod-coins">&nbsp;</div><div class="pod-bar" style="height:'+heights[pos]+';background:'+colors[pos]+'"></div></div>'; return; }
-    const val = tab==='sprint' ? ('⚡ '+fmtTime(r.sprintMs)) : (tab==='tour' ? ('🗼 '+(r.tower||0)) : ('⭐ '+(r.stars||0)));
+    const val = tab==='sprint' ? ('⚡ '+fmtTime(r.sprintMs)) : (tab==='tour' ? ('🗼 '+(r.tower||0)) : (tab==='monster' ? ('👾 '+(r.monster||0)) : ('⭐ '+(r.stars||0))));
     h+='<div class="pod"><div class="pod-top">'+medals[pos]+'</div><div class="pod-ava">'+(r.avatar||'🧒')+'</div><div class="pod-name">'+escapeHtml(r.pseudo||'?')+'</div><div class="pod-coins">'+val+'</div><div class="pod-bar" style="height:'+heights[pos]+';background:'+colors[pos]+'">'+(ri+1)+'</div></div>';
   });
   pod.innerHTML=h;
@@ -1728,6 +1730,10 @@ function renderBoard(){
     if(lbl) lbl.textContent='Classé par étage atteint 🗼';
     rows=rows.filter(function(r){return (r.tower||0)>0;}).sort(function(a,b){ return (b.tower||0)-(a.tower||0); });
     if(meBox) meBox.textContent='Toi : '+cloud.pseudo+' — 🗼 étage '+(profile.bestTower||0)+'   (groupe : '+cloud.groupe+')';
+  } else if(boardTab==='monster'){
+    if(lbl) lbl.textContent='Classé par monstres vaincus 👾';
+    rows=rows.filter(function(r){return (r.monster||0)>0;}).sort(function(a,b){ return (b.monster||0)-(a.monster||0); });
+    if(meBox) meBox.textContent='Toi : '+cloud.pseudo+' — 👾 '+(profile.bestMonster||0)+' monstres   (groupe : '+cloud.groupe+')';
   } else {
     if(lbl) lbl.textContent='Classé par étoiles ⭐';
     rows.sort(function(a,b){ return (b.stars||0)-(a.stars||0); });
@@ -1735,12 +1741,12 @@ function renderBoard(){
     if(rows.length>=2 && pseudoKey(rows[0].pseudo||'')===meKey) unlockBadge('group_champ');
   }
   renderPodium(rows, boardTab);
-  if(!rows.length){ list.innerHTML='<p style="font-size:14px;color:var(--text-secondary)">'+(boardTab==='sprint'?'Aucun temps de Sprint dans ce groupe. Lance un Sprint !':(boardTab==='tour'?'Personne n\'a encore grimpé la Tour. À toi de jouer !':'Personne dans ce groupe. Sois le premier ! 🎉'))+'</p>'; return; }
+  if(!rows.length){ list.innerHTML='<p style="font-size:14px;color:var(--text-secondary)">'+(boardTab==='sprint'?'Aucun temps de Sprint dans ce groupe. Lance un Sprint !':(boardTab==='tour'?'Personne n\'a encore grimpé la Tour. À toi de jouer !':(boardTab==='monster'?'Personne n\'a encore chassé de monstres. À toi de jouer !':'Personne dans ce groupe. Sois le premier ! 🎉')))+'</p>'; return; }
   let h='';
   rows.forEach(function(r,i){
     const mine=(pseudoKey(r.pseudo||'')===meKey);
     const medal=['🥇','🥈','🥉'][i]||((i+1)+'.');
-    const val = boardTab==='sprint' ? ('⚡ '+fmtTime(r.sprintMs)) : (boardTab==='tour' ? ('🗼 '+(r.tower||0)) : ('⭐ '+(r.stars||0)));
+    const val = boardTab==='sprint' ? ('⚡ '+fmtTime(r.sprintMs)) : (boardTab==='tour' ? ('🗼 '+(r.tower||0)) : (boardTab==='monster' ? ('👾 '+(r.monster||0)) : ('⭐ '+(r.stars||0))));
     h+='<div class="rec-row'+(mine?' rec-top':'')+'">'
       +'<span class="rec-rank">'+medal+'</span>'
       +'<span class="rec-name">'+(r.avatar||'🧒')+' '+escapeHtml(r.pseudo||'?')+(mine?' ⭐':'')+'</span>'
@@ -2160,6 +2166,7 @@ document.getElementById('btn-board-join').addEventListener('click',boardJoin);
 document.getElementById('btn-board-refresh').addEventListener('click',loadLeaderboard);
 document.getElementById('bt-aventure').addEventListener('click',function(){ setBoardTab('aventure'); });
 document.getElementById('bt-tour').addEventListener('click',function(){ setBoardTab('tour'); });
+document.getElementById('bt-monster').addEventListener('click',function(){ setBoardTab('monster'); });
 document.getElementById('bt-sprint').addEventListener('click',function(){ setBoardTab('sprint'); });
 document.getElementById('card-tour').addEventListener('click',startTour);
 document.getElementById('card-monster').addEventListener('click',startMonster);
