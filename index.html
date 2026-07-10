@@ -148,6 +148,30 @@
   }
   #confirm-msg{font-size:15px;font-weight:600;line-height:1.5;margin:0 0 18px;}
   #confirm-actions{display:flex;gap:10px;justify-content:flex-end;}
+
+  /* ================= GAMIFICATION / RPG ================= */
+  #hud{display:flex;align-items:center;gap:7px;justify-content:flex-end;margin-bottom:12px;}
+  .hud-pill{display:inline-flex;align-items:center;gap:5px;background:var(--surface-1);border:1px solid var(--border);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;}
+  .hud-coin{background:var(--gold-bg);border-color:var(--gold);color:var(--gold);}
+  .hud-streak{background:var(--danger-bg);border-color:var(--danger-border);color:var(--danger-text);}
+  .hud-mute{cursor:pointer;background:var(--surface-1);border:1px solid var(--border);border-radius:999px;padding:5px 10px;font-size:14px;}
+  /* récompense flottante + confettis */
+  #float-layer{position:fixed;inset:0;pointer-events:none;z-index:1200;overflow:hidden;}
+  .floatup{position:absolute;font-weight:800;font-size:22px;color:var(--gold);text-shadow:0 2px 8px rgba(0,0,0,.18);white-space:nowrap;animation:floatup 1.05s ease-out forwards;}
+  @keyframes floatup{0%{opacity:0;transform:translateY(14px) scale(.7);}18%{opacity:1;}100%{opacity:0;transform:translateY(-64px) scale(1.15);}}
+  .confetti-piece{position:absolute;width:9px;height:15px;top:-24px;border-radius:2px;animation:confetti-fall linear forwards;}
+  @keyframes confetti-fall{0%{transform:translateY(-24px) rotate(0);}100%{transform:translateY(112vh) rotate(680deg);}}
+  @keyframes pop{0%{transform:scale(1);}45%{transform:scale(1.05);}100%{transform:scale(1);}}
+  .pop{animation:pop .32s ease;}
+  /* profil sur le menu + trophées */
+  .menu-profile{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--gold-bg);border:1px solid var(--gold);border-radius:12px;padding:11px 14px;margin-bottom:16px;font-size:14px;}
+  .menu-profile b{color:var(--gold);}
+  #badges-wrap{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px;}
+  .badge{display:flex;flex-direction:column;align-items:center;gap:3px;width:72px;text-align:center;}
+  .badge .b-ico{font-size:30px;line-height:1;filter:grayscale(1);opacity:.32;transition:.2s;}
+  .badge.on .b-ico{filter:none;opacity:1;}
+  .badge .b-name{font-size:10px;color:var(--text-muted);line-height:1.2;}
+  .badge.on .b-name{color:var(--text-secondary);font-weight:600;}
 </style>
 </head>
 <body>
@@ -162,10 +186,20 @@
 </div>
 <div class="card">
 
+  <div id="hud">
+    <span class="hud-pill hud-coin" id="hud-coins">🪙 0</span>
+    <span class="hud-pill hud-streak" id="hud-streak" style="display:none">🔥 0</span>
+    <span class="hud-mute" id="hud-mute" title="Activer / couper le son">🔊</span>
+  </div>
+
   <!-- ========== MENU PRINCIPAL ========== -->
   <div id="screen-menu">
     <h1>Mes Révisions CM1 – CM2</h1>
     <p class="subtitle">Choisis ton jeu.</p>
+    <div class="menu-profile">
+      <span>🪙 <b id="mp-coins">0</b> pièces&nbsp; ·&nbsp; <b id="mp-stars">0</b> ⭐</span>
+      <span id="mp-badgecount" style="font-size:12px;color:var(--text-muted);"></span>
+    </div>
     <div class="game-card" id="card-aventure">
       <div class="game-emoji">🏰</div>
       <div class="game-txt">
@@ -180,6 +214,8 @@
         <p class="game-desc">20 multiplications le plus vite possible. Bats ton record !</p>
       </div>
     </div>
+    <p class="section-label" style="margin-top:6px;">🏅 Mes trophées</p>
+    <div id="badges-wrap"></div>
   </div>
 
   <!-- ========== ACCUEIL AVENTURE ========== -->
@@ -325,6 +361,8 @@
   </div>
 
 </div>
+
+<div id="float-layer"></div>
 
 <script>
 window.addEventListener('error',function(ev){
@@ -493,7 +531,89 @@ const BANK = [
 {m:"Anglais",c:"verbe to be",q:"Complète : She ___ happy.",o:["am","is","are","be"],a:1,d:3},
 {m:"Anglais",c:"questions simples",q:"'How old are you?' demande :",o:["ton âge","ton nom","où tu vas","ce que tu fais"],a:0,d:3},
 {m:"Anglais",c:"vocabulaire",q:"'I have got two ___' (deux frères) :",o:["sister","brothers","mother","father"],a:1,d:3},
-{m:"Anglais",c:"grammaire",q:"Le pluriel de 'a child' est :",o:["childs","children","childes","childrens"],a:1,d:3}
+{m:"Anglais",c:"grammaire",q:"Le pluriel de 'a child' est :",o:["childs","children","childes","childrens"],a:1,d:3},
+
+/* ============ SCIENCES ============ */
+{m:"Sciences",c:"le vivant",q:"Lequel est un être vivant ?",o:["un rocher","un arbre","une chaise","un vélo"],a:1,d:1},
+{m:"Sciences",c:"corps humain",q:"Combien de dents de lait a un enfant ?",o:["20","28","32","16"],a:0,d:1},
+{m:"Sciences",c:"les animaux",q:"Un animal qui mange de la viande est :",o:["herbivore","carnivore","végétarien","minéral"],a:1,d:1},
+{m:"Sciences",c:"les plantes",q:"De quoi une plante a-t-elle besoin pour pousser ?",o:["de lumière et d'eau","de sable seulement","de rien","d'électricité"],a:0,d:1},
+{m:"Sciences",c:"la matière",q:"L'eau qui gèle devient :",o:["de la vapeur","de la glace","du gaz","du sable"],a:1,d:1},
+{m:"Sciences",c:"les 5 sens",q:"Avec quel organe sent-on les odeurs ?",o:["la langue","le nez","l'oreille","la peau"],a:1,d:1},
+{m:"Sciences",c:"corps humain",q:"Quel organe permet de respirer ?",o:["le cœur","les poumons","l'estomac","le foie"],a:1,d:2},
+{m:"Sciences",c:"états de l'eau",q:"Quand l'eau bout, elle se transforme en :",o:["glace","vapeur","neige","boue"],a:1,d:2},
+{m:"Sciences",c:"le vivant",q:"La transformation de la chenille en papillon s'appelle :",o:["la digestion","la métamorphose","la respiration","la germination"],a:1,d:2},
+{m:"Sciences",c:"système solaire",q:"Autour de quel astre tourne la Terre ?",o:["la Lune","le Soleil","Mars","une comète"],a:1,d:2},
+{m:"Sciences",c:"les animaux",q:"Un animal qui possède une colonne vertébrale est un :",o:["invertébré","vertébré","végétal","minéral"],a:1,d:2},
+{m:"Sciences",c:"électricité",q:"Pour allumer une ampoule avec une pile, le circuit doit être :",o:["ouvert","fermé","cassé","mouillé"],a:1,d:2},
+{m:"Sciences",c:"corps humain",q:"Le sang circule dans le corps grâce :",o:["aux nerfs","au cœur et aux vaisseaux","aux os","aux cheveux"],a:1,d:3},
+{m:"Sciences",c:"système solaire",q:"Combien de planètes compte le système solaire ?",o:["7","8","9","10"],a:1,d:3},
+{m:"Sciences",c:"les plantes",q:"Grâce à la lumière, les plantes fabriquent leur nourriture par la :",o:["digestion","photosynthèse","respiration","évaporation"],a:1,d:3},
+{m:"Sciences",c:"la matière",q:"L'air qui nous entoure est :",o:["un solide","un liquide","un gaz","du vide"],a:2,d:3},
+{m:"Sciences",c:"classification",q:"L'abeille est un :",o:["mammifère","insecte","oiseau","reptile"],a:1,d:3},
+
+/* ============ VOCABULAIRE ============ */
+{m:"Vocabulaire",c:"synonymes",q:"Un synonyme de 'content' est :",o:["triste","heureux","fatigué","méchant"],a:1,d:1},
+{m:"Vocabulaire",c:"contraires",q:"Le contraire de 'grand' est :",o:["gros","petit","long","haut"],a:1,d:1},
+{m:"Vocabulaire",c:"contraires",q:"Le contraire de 'jour' est :",o:["matin","soir","nuit","midi"],a:2,d:1},
+{m:"Vocabulaire",c:"synonymes",q:"Un synonyme de 'rapide' est :",o:["lent","vif","calme","lourd"],a:1,d:1},
+{m:"Vocabulaire",c:"ordre alphabétique",q:"Quel mot vient en premier dans le dictionnaire ?",o:["banane","abricot","cerise","datte"],a:1,d:1},
+{m:"Vocabulaire",c:"familles de mots",q:"Quel mot appartient à la famille de 'dent' ?",o:["dentiste","dinde","danser","donner"],a:0,d:1},
+{m:"Vocabulaire",c:"synonymes",q:"Un synonyme de 'joli' est :",o:["laid","beau","vieux","sale"],a:1,d:2},
+{m:"Vocabulaire",c:"contraires",q:"Le contraire de 'monter' est :",o:["tomber","descendre","sauter","courir"],a:1,d:2},
+{m:"Vocabulaire",c:"sens des mots",q:"Dans 'la souris de l'ordinateur', 'souris' désigne :",o:["un animal","un objet","un aliment","un jeu"],a:1,d:2},
+{m:"Vocabulaire",c:"familles de mots",q:"Le radical de 'terrestre, atterrir, terrain' est :",o:["ter","terre","train","est"],a:1,d:2},
+{m:"Vocabulaire",c:"préfixes",q:"Dans 'refaire', le préfixe 're-' veut dire :",o:["ne pas","à nouveau","avant","sous"],a:1,d:2},
+{m:"Vocabulaire",c:"niveaux de langue",q:"'bagnole' est un mot de langage :",o:["soutenu","courant","familier","poétique"],a:2,d:2},
+{m:"Vocabulaire",c:"synonymes",q:"Un synonyme de 'débuter' est :",o:["finir","commencer","arrêter","tomber"],a:1,d:3},
+{m:"Vocabulaire",c:"homonymes",q:"'ver, verre, vers, vert' sont des :",o:["synonymes","homonymes","contraires","préfixes"],a:1,d:3},
+{m:"Vocabulaire",c:"sens figuré",q:"'Il a un cœur de pierre' est employé au sens :",o:["propre","figuré","direct","concret"],a:1,d:3},
+{m:"Vocabulaire",c:"préfixes",q:"Le préfixe 'in-' dans 'invisible' signifie :",o:["dans","le contraire","avant","très"],a:1,d:3},
+{m:"Vocabulaire",c:"suffixes",q:"Le suffixe '-able' dans 'mangeable' indique :",o:["le contraire","que l'on peut faire","le passé","un lieu"],a:1,d:3},
+
+/* ============ MESURES ============ */
+{m:"Mesures",c:"longueurs",q:"Quelle unité mesure une longueur ?",o:["le litre","le mètre","le kilo","l'heure"],a:1,d:1},
+{m:"Mesures",c:"monnaie",q:"Combien de centimes dans 1 euro ?",o:["10","50","100","1000"],a:2,d:1},
+{m:"Mesures",c:"durées",q:"Combien de minutes dans une heure ?",o:["30","60","100","24"],a:1,d:1},
+{m:"Mesures",c:"masses",q:"On pèse une pomme en :",o:["litres","grammes","mètres","heures"],a:1,d:1},
+{m:"Mesures",c:"durées",q:"Combien d'heures dans une journée ?",o:["12","24","60","7"],a:1,d:1},
+{m:"Mesures",c:"longueurs",q:"1 mètre = combien de centimètres ?",o:["10","100","1000","50"],a:1,d:2},
+{m:"Mesures",c:"masses",q:"1 kilogramme = combien de grammes ?",o:["100","1000","10","500"],a:1,d:2},
+{m:"Mesures",c:"contenances",q:"1 litre = combien de centilitres ?",o:["10","100","1000","50"],a:1,d:2},
+{m:"Mesures",c:"durées",q:"Combien de jours dans une semaine ?",o:["5","6","7","10"],a:2,d:2},
+{m:"Mesures",c:"monnaie",q:"J'achète pour 7 €, je paie avec 10 €. On me rend :",o:["2 €","3 €","4 €","17 €"],a:1,d:2},
+{m:"Mesures",c:"durées",q:"2 heures = combien de minutes ?",o:["100","120","60","200"],a:1,d:2},
+{m:"Mesures",c:"longueurs",q:"1 kilomètre = combien de mètres ?",o:["100","1000","10000","500"],a:1,d:3},
+{m:"Mesures",c:"conversions",q:"250 cm = combien de mètres ?",o:["2,5 m","25 m","0,25 m","250 m"],a:0,d:3},
+{m:"Mesures",c:"durées",q:"Combien de mois dans une année ?",o:["10","12","24","52"],a:1,d:3},
+{m:"Mesures",c:"périmètre",q:"Le périmètre d'un carré de côté 5 cm est :",o:["10 cm","20 cm","25 cm","15 cm"],a:1,d:3},
+{m:"Mesures",c:"aire",q:"L'aire d'un rectangle de 4 cm sur 3 cm est :",o:["7 cm²","12 cm²","14 cm²","24 cm²"],a:1,d:3},
+
+/* ============ GÉOGRAPHIE ============ */
+{m:"Géographie",c:"la France",q:"Quelle est la capitale de la France ?",o:["Lyon","Paris","Marseille","Nantes"],a:1,d:1},
+{m:"Géographie",c:"paysages",q:"Une grande étendue d'eau salée est :",o:["un lac","une mer","une rivière","un étang"],a:1,d:1},
+{m:"Géographie",c:"points cardinaux",q:"Le soleil se lève à l' :",o:["ouest","est","nord","sud"],a:1,d:1},
+{m:"Géographie",c:"la France",q:"Quel est le plus long fleuve de France ?",o:["la Seine","la Loire","le Rhône","la Garonne"],a:1,d:2},
+{m:"Géographie",c:"les continents",q:"Sur quel continent se trouve la France ?",o:["l'Asie","l'Europe","l'Afrique","l'Amérique"],a:1,d:2},
+{m:"Géographie",c:"la France",q:"On dit souvent que la France a la forme d'un :",o:["cercle","hexagone","triangle","carré"],a:1,d:2},
+{m:"Géographie",c:"les océans",q:"Quel océan borde la France à l'ouest ?",o:["l'océan Pacifique","l'océan Atlantique","l'océan Indien","la mer Rouge"],a:1,d:3},
+{m:"Géographie",c:"montagnes",q:"Quel est le plus haut sommet des Alpes ?",o:["le Mont Blanc","le Puy de Dôme","le Pic du Midi","le Ventoux"],a:0,d:3},
+{m:"Géographie",c:"la Terre",q:"La ligne imaginaire qui partage la Terre en deux est :",o:["le méridien","l'équateur","le tropique","l'horizon"],a:1,d:3},
+
+/* ============ COMPLÉMENTS (matières existantes) ============ */
+{m:"Calcul",c:"fractions",q:"La moitié de 10, c'est :",o:["2","5","10","20"],a:1,d:1},
+{m:"Calcul",c:"problèmes",q:"Un stylo coûte 2 €. Combien coûtent 5 stylos ?",o:["7 €","10 €","5 €","12 €"],a:1,d:1},
+{m:"Calcul",c:"problèmes",q:"3 paquets de 6 gâteaux, ça fait :",o:["9","18","36","12"],a:1,d:2},
+{m:"Calcul",c:"fractions",q:"Le quart (1/4) de 20, c'est :",o:["4","5","10","2"],a:1,d:2},
+{m:"Calcul",c:"division",q:"24 ÷ 4 = ?",o:["6","8","4","12"],a:0,d:2},
+{m:"Calcul",c:"nombres décimaux",q:"Quel nombre est le plus grand ?",o:["0,5","0,45","0,05","0,4"],a:0,d:3},
+{m:"Histoire",c:"Préhistoire",q:"Une grande découverte des hommes préhistoriques est :",o:["l'électricité","le feu","la voiture","l'ordinateur"],a:1,d:1},
+{m:"Histoire",c:"Antiquité",q:"Les pyramides d'Égypte ont été construites par les :",o:["Romains","Égyptiens","Gaulois","Vikings"],a:1,d:2},
+{m:"Histoire",c:"Moyen Âge",q:"Au Moyen Âge, le seigneur habitait dans :",o:["une usine","un château fort","un immeuble","une caverne"],a:1,d:2},
+{m:"Histoire",c:"repères",q:"La Révolution française a eu lieu en :",o:["1515","1789","1918","1492"],a:1,d:3},
+{m:"Conjugaison",c:"présent",q:"'je (aller)' au présent, c'est :",o:["je vais","je vas","je alle","je vai"],a:0,d:1},
+{m:"Orthographe",c:"pluriel",q:"Le pluriel de 'un cheval' est :",o:["des chevals","des chevaux","des cheveaux","des chival"],a:1,d:2},
+{m:"Grammaire",c:"nature des mots",q:"Dans 'il marche rapidement', 'rapidement' est :",o:["un nom","un adverbe","un verbe","un adjectif"],a:1,d:2}
 ];
 
 const subjects = [...new Set(BANK.map(q=>q.m))];
@@ -525,6 +645,7 @@ function freshState(){
     levelQueue:[], levelPos:0, levelLives:LIVES_PER_LEVEL, current:null,
     // boss
     bossHp:BOSS_HP, youHp:YOU_HP, bossCurrent:null,
+    levelStars:{},
     won:false, lost:false
   };
 }
@@ -625,11 +746,16 @@ function renderMap(){
       svg+='<text x="'+p.x+'" y="'+(p.y+7)+'" font-size="22" text-anchor="middle">🏰</text>';
     } else if(done){
       svg+='<text x="'+p.x+'" y="'+(p.y+6)+'" font-size="16" text-anchor="middle">⭐</text>';
+      var _st=(state.levelStars&&state.levelStars[lvl])?state.levelStars[lvl]:1;
+      svg+='<text x="'+p.x+'" y="'+(p.y+rr+11)+'" font-size="11" text-anchor="middle" fill="#C9961F">'+'★★★'.slice(0,_st)+'</text>';
     } else {
       svg+='<text x="'+p.x+'" y="'+(p.y+5)+'" font-size="14" font-weight="700" text-anchor="middle" fill="'+(currentUnlocked?'#0C447C':'#888780')+'">'+lvl+'</text>';
     }
     // avatar sur le niveau courant
     if(lvl===state.currentLevel && !state.won){
+      svg+='<circle cx="'+p.x+'" cy="'+p.y+'" r="'+(rr+4)+'" fill="none" stroke="#185FA5" stroke-width="2">'
+         +'<animate attributeName="r" values="'+(rr+3)+';'+(rr+10)+';'+(rr+3)+'" dur="1.6s" repeatCount="indefinite"/>'
+         +'<animate attributeName="opacity" values="0.7;0;0.7" dur="1.6s" repeatCount="indefinite"/></circle>';
       svg+='<text x="'+p.x+'" y="'+(p.y-26)+'" font-size="26" text-anchor="middle">🧒</text>';
     }
     if(state.won && isBoss){
@@ -656,10 +782,12 @@ function show(id){
   ['screen-menu','screen-start','screen-map','screen-quiz','screen-boss','screen-end','screen-sprint-start','screen-sprint','screen-sprint-end']
     .forEach(s=>document.getElementById(s).style.display='none');
   document.getElementById(id).style.display='block';
+  renderHUD();
 }
 
 function startAdventure(){
   if(state.selected.size===0){alert('Choisis au moins une matière.');return;}
+  sessionStreak=0;
   goToMap();
 }
 function goToMap(){ renderMap(); show('screen-map'); }
@@ -729,6 +857,7 @@ function answerLevel(i){
     if(j===q.a){opts[j].style.background='var(--success-bg)';opts[j].style.borderColor='var(--success-border)';opts[j].style.color='var(--success-text)';}
     if(j===i&&!correct){opts[j].style.background='var(--danger-bg)';opts[j].style.borderColor='var(--danger-border)';opts[j].style.color='var(--danger-text)';}
   }
+  if(correct){ gainCorrect(10,true); opts[i].classList.add('pop'); } else { onWrong(); }
   renderLives();
   const fb=document.getElementById('q-feedback');
   fb.textContent=correct?'Bonne réponse !':'Pas tout à fait : la bonne réponse est surlignée.';
@@ -755,21 +884,28 @@ function answerLevel(i){
 }
 function nextLevelStep(){
   if(state._failLevel){ startLevel(); return; } // recommence le même niveau
-  if(state._forcePass){                          // niveau validé après 2 échecs
-    state._forcePass=false;
-    state.currentLevel++;
-    if(state.currentLevel>state.maxUnlocked) state.maxUnlocked=state.currentLevel;
-    saveProgress(); goToMap(); return;
-  }
+  if(state._forcePass){ state._forcePass=false; completeLevel(1); return; } // validé après 2 échecs → 1 étoile
   state.levelPos++;
   if(state.levelPos>=QPERLEVEL){
-    // niveau réussi
-    state.currentLevel++;
-    if(state.currentLevel>state.maxUnlocked) state.maxUnlocked=state.currentLevel;
-    saveProgress(); goToMap();
+    completeLevel(Math.max(1,state.levelLives));   // étoiles = vies restantes (max 3)
   } else {
     loadLevelQuestion();
   }
+}
+function completeLevel(stars){
+  const lvl=state.currentLevel;
+  state.levelStars=state.levelStars||{};
+  state.levelStars[lvl]=Math.max(stars, state.levelStars[lvl]||0);
+  const s=state.levelStars[lvl];
+  profile.stars=(profile.stars||0)+s;
+  const gain=20*s;
+  profile.coins+=gain; saveProfile(); renderHUD();
+  floatReward('+'+gain+' 🪙 '+'⭐'.repeat(s),'#C9961F');
+  confetti(s>=3?46:22);
+  if(s>=3) unlockBadge('perfect_level');
+  state.currentLevel++;
+  if(state.currentLevel>state.maxUnlocked) state.maxUnlocked=state.currentLevel;
+  saveProgress(); goToMap();
 }
 
 /* ---------------- BOSS ---------------- */
@@ -813,10 +949,12 @@ function answerBoss(k){
   const fb=document.getElementById('boss-feedback');
   if(correct){
     state.bossHp--;
+    gainCorrect(15,true);
     emoji.classList.remove('boss-shake'); void emoji.offsetWidth; emoji.classList.add('boss-shake');
     fb.textContent='⚔️ Touché ! Le boss perd un cœur.'; fb.style.color='var(--success-text)';
   } else {
     state.youHp--;
+    onWrong();
     fb.textContent='🔥 Le boss riposte, tu perds un cœur !'; fb.style.color='var(--danger-text)';
   }
   updateBossBars();
@@ -834,6 +972,10 @@ function finishAdventure(won){
   if(won){
     banner.className='banner banner-win';
     banner.innerHTML='<span class="crown">👑</span>Bravo ! Tu as vaincu le Boss et tu deviens Roi/Reine du Royaume des Savoirs !';
+    profile.coins+=200; profile.stars=(profile.stars||0)+5; saveProfile(); renderHUD();
+    unlockBadge('boss_win'); soundWin();
+    confetti(90); setTimeout(()=>confetti(70),500); setTimeout(()=>confetti(60),1100);
+    floatReward('+200 🪙 · 👑','#C9961F');
   } else {
     banner.className='banner banner-lose';
     banner.innerHTML='Le Boss était trop fort cette fois… Réessaie l\'aventure pour t\'emparer de la couronne !';
@@ -954,6 +1096,7 @@ function sprintOptions(prod){
 }
 
 function startSprint(){
+  sessionStreak=0;
   sprint={pos:0,errors:0,startTime:Date.now(),timerId:null,current:null,locked:false,deck:buildMultDeck(SPRINT_N)};
   show('screen-sprint');
   sprint.timerId=setInterval(updateSprintTimer,100);
@@ -990,7 +1133,8 @@ function answerSprint(v,btn){
   const fb=document.getElementById('sprint-feedback');
   if(v===prod){
     sprint.locked=true;                    // bloque les autres clics
-    paintCorrect(btn);
+    paintCorrect(btn); btn.classList.add('pop');
+    gainCorrect(5,false);
     fb.textContent='✅ Bravo !'; fb.style.color='var(--success-text)';
     const last=(sprint.pos+1>=SPRINT_N);
     setTimeout(()=>{
@@ -1001,7 +1145,7 @@ function answerSprint(v,btn){
     // erreur : pénalité, bouton rouge, on reste sur la question
     sprint.errors++;
     btn.disabled=true;
-    paintWrong(btn);
+    paintWrong(btn); soundWrong();
     fb.textContent='❌ +5 s de pénalité ! Réessaie.';
     fb.style.color='var(--danger-text)';
   }
@@ -1013,6 +1157,8 @@ function endSprint(){
   const recsBefore=sprintRecords();
   const prevBest=recsBefore.length?recsBefore[0].ms:Infinity;
   const isBest=totalMs<prevBest;
+  if(totalMs<30000) unlockBadge('sprint_fast');
+  if(isBest || recsBefore.length===0){ confetti(60); soundWin(); }
   show('screen-sprint-end');
   const banner=document.getElementById('sprint-end-banner');
   if(isBest && recsBefore.length>0){
@@ -1067,6 +1213,99 @@ function hasStorage(){
   catch(e){return false;}
 }
 const STORAGE_OK=hasStorage();
+
+/* ================= PROFIL / RÉCOMPENSES ================= */
+const PROFILE_KEY='revisions-profil-v1';
+let profile={coins:0,stars:0,badges:[],muted:false,bestStreak:0,totalCorrect:0};
+let sessionStreak=0;
+function loadProfile(){ if(!STORAGE_OK) return; try{const r=localStorage.getItem(PROFILE_KEY); if(r){profile=Object.assign(profile,JSON.parse(r)); if(!Array.isArray(profile.badges)) profile.badges=[];}}catch(e){} }
+function saveProfile(){ if(!STORAGE_OK) return; try{localStorage.setItem(PROFILE_KEY,JSON.stringify(profile));}catch(e){} }
+function renderHUD(){
+  const c=document.getElementById('hud-coins'); if(c) c.textContent='🪙 '+profile.coins;
+  const s=document.getElementById('hud-streak'); if(s){ if(sessionStreak>=2){s.style.display='';s.textContent='🔥 '+sessionStreak;} else s.style.display='none'; }
+  const m=document.getElementById('hud-mute'); if(m) m.textContent=profile.muted?'🔇':'🔊';
+  const mpc=document.getElementById('mp-coins'); if(mpc) mpc.textContent=profile.coins;
+  const mps=document.getElementById('mp-stars'); if(mps) mps.textContent=profile.stars;
+}
+function floatReward(txt,color){
+  const layer=document.getElementById('float-layer'); if(!layer) return;
+  const el=document.createElement('div'); el.className='floatup'; el.textContent=txt;
+  if(color) el.style.color=color;
+  el.style.left=(28+Math.random()*44)+'%'; el.style.top='52%';
+  layer.appendChild(el); setTimeout(()=>{el.remove();},1100);
+}
+const CONFETTI_COLORS=['#E24B4A','#639922','#185FA5','#C9961F','#8E44AD','#E67E22'];
+function confetti(n){
+  const layer=document.getElementById('float-layer'); if(!layer) return; n=n||36;
+  for(let i=0;i<n;i++){
+    const p=document.createElement('div'); p.className='confetti-piece';
+    p.style.left=Math.random()*100+'%';
+    p.style.background=CONFETTI_COLORS[i%CONFETTI_COLORS.length];
+    p.style.animationDuration=(1.7+Math.random()*1.5)+'s';
+    p.style.animationDelay=(Math.random()*0.35)+'s';
+    layer.appendChild(p); setTimeout(()=>{p.remove();},3600);
+  }
+}
+/* sons (WebAudio, sans fichier) */
+let _ac=null;
+function beep(freqs,dur){
+  if(profile.muted) return;
+  try{
+    _ac=_ac||new (window.AudioContext||window.webkitAudioContext)();
+    if(_ac.state==='suspended') _ac.resume();
+    let t=_ac.currentTime;
+    freqs.forEach(f=>{
+      const o=_ac.createOscillator(),g=_ac.createGain();
+      o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(_ac.destination);
+      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.14,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+      o.start(t); o.stop(t+dur); t+=dur*0.9;
+    });
+  }catch(e){}
+}
+function soundOk(){ beep([660,880],0.11); }
+function soundWin(){ beep([523,659,784,1047],0.13); }
+function soundWrong(){ beep([220,160],0.14); }
+function toggleMute(){ profile.muted=!profile.muted; saveProfile(); renderHUD(); if(!profile.muted) soundOk(); }
+/* gains */
+function gainCorrect(base,useStreak){
+  profile.totalCorrect=(profile.totalCorrect||0)+1;
+  if(useStreak){ sessionStreak++; if(sessionStreak>profile.bestStreak) profile.bestStreak=sessionStreak; }
+  let bonus=0; if(useStreak&&sessionStreak>=3) bonus=(sessionStreak>=5?10:5);
+  const gain=base+bonus;
+  profile.coins+=gain; saveProfile(); renderHUD();
+  floatReward('+'+gain+' 🪙'); soundOk();
+  if(useStreak&&(sessionStreak===3||sessionStreak===5||sessionStreak===10)) floatReward('🔥 Série de '+sessionStreak+' !','#E24B4A');
+  if(profile.totalCorrect>=1) unlockBadge('first_correct');
+  if(profile.totalCorrect>=200) unlockBadge('scholar');
+  if(sessionStreak>=5) unlockBadge('streak5');
+  if(profile.coins>=100) unlockBadge('coins100');
+  if(profile.coins>=500) unlockBadge('coins500');
+}
+function onWrong(){ sessionStreak=0; renderHUD(); soundWrong(); }
+/* trophées */
+const BADGES=[
+  {id:'first_correct',ico:'🌟',name:'1re bonne réponse'},
+  {id:'streak5',ico:'🔥',name:'Série de 5'},
+  {id:'perfect_level',ico:'💎',name:'Niveau parfait'},
+  {id:'coins100',ico:'💰',name:'100 pièces'},
+  {id:'coins500',ico:'🏦',name:'500 pièces'},
+  {id:'boss_win',ico:'👑',name:'Roi du Royaume'},
+  {id:'sprint_fast',ico:'⚡',name:'Sprint < 30 s'},
+  {id:'scholar',ico:'🎓',name:'200 bonnes rép.'}
+];
+function unlockBadge(id){
+  if(!profile.badges) profile.badges=[];
+  if(profile.badges.indexOf(id)>=0) return;
+  const b=BADGES.find(x=>x.id===id); if(!b) return;
+  profile.badges.push(id); saveProfile(); renderBadges();
+  confetti(28); floatReward('🏅 Trophée : '+b.name,'#C9961F'); soundWin();
+}
+function renderBadges(){
+  const w=document.getElementById('badges-wrap'); if(!w) return;
+  w.innerHTML=BADGES.map(b=>'<div class="badge'+((profile.badges&&profile.badges.indexOf(b.id)>=0)?' on':'')+'"><span class="b-ico">'+b.ico+'</span><span class="b-name">'+b.name+'</span></div>').join('');
+  const cnt=document.getElementById('mp-badgecount');
+  if(cnt){ const n=(profile.badges||[]).filter(id=>BADGES.find(b=>b.id===id)).length; cnt.textContent=n+' / '+BADGES.length+' 🏅'; }
+}
 function saveProgress(){
   if(!STORAGE_OK) return;
   try{
@@ -1077,6 +1316,7 @@ function saveProgress(){
       score:state.score, total:state.total,
       competenceStats:state.competenceStats,
       used:[...state.used],
+      levelStars:state.levelStars,
       finished:state.won||state.lost,
       won:state.won
     };
@@ -1097,6 +1337,7 @@ function applySave(d){
   state.score=d.score||0; state.total=d.total||0;
   state.competenceStats=d.competenceStats||{};
   state.used=new Set(d.used||[]);
+  state.levelStars=d.levelStars||{};
 }
 // affiche le bouton Reprendre sur l'accueil si une partie est en cours
 function refreshResumeUI(){
@@ -1167,7 +1408,7 @@ document.getElementById('btn-newgame').addEventListener('click',()=>{
 });
 
 /* ---- menu principal ---- */
-function goToMenu(){ refreshResumeUI(); show('screen-menu'); }
+function goToMenu(){ refreshResumeUI(); renderBadges(); show('screen-menu'); }
 document.getElementById('card-aventure').addEventListener('click',()=>{
   buildSubjectGrid(); refreshResumeUI(); show('screen-start');
 });
@@ -1197,11 +1438,18 @@ document.getElementById('btn-sprint-quit').addEventListener('click',()=>{
 document.getElementById('btn-sprint-again').addEventListener('click',startSprint);
 document.getElementById('btn-sprint-menu').addEventListener('click',goToMenu);
 
+document.getElementById('hud-mute').addEventListener('click',toggleMute);
+
 /* ---------------- init ---------------- */
 try{
+  loadProfile();
   state=freshState();
   buildSubjectGrid();
   refreshResumeUI();
+  renderBadges();
+  renderHUD();
+  var _desc=document.querySelector('#card-aventure .game-desc');
+  if(_desc) _desc.textContent='20 niveaux, '+subjects.length+' matières, un boss à vaincre pour devenir Roi du royaume.';
   show('screen-menu');
 }catch(e){
   var d=document.createElement('div');
