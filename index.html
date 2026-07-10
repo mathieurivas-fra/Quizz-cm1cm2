@@ -214,6 +214,13 @@
         <p class="game-desc">20 multiplications le plus vite possible. Bats ton record !</p>
       </div>
     </div>
+    <div class="game-card" id="card-board">
+      <div class="game-emoji">🏆</div>
+      <div class="game-txt">
+        <p class="game-name">Classement en ligne</p>
+        <p class="game-desc">Rejoins ton groupe et compare tes pièces et tes étoiles avec les autres joueurs !</p>
+      </div>
+    </div>
     <p class="section-label" style="margin-top:6px;">🏅 Mes trophées</p>
     <div id="badges-wrap"></div>
   </div>
@@ -360,12 +367,48 @@
     <button class="btn-primary" id="btn-restart">Rejouer l'aventure</button>
   </div>
 
+  <!-- ========== CLASSEMENT EN LIGNE ========== -->
+  <div id="screen-board">
+    <div class="map-head">
+      <p class="map-title">🏆 Classement en ligne</p>
+      <button class="btn-ghost" id="btn-board-back">← Menu</button>
+    </div>
+
+    <div id="board-offline" style="display:none">
+      <p class="subtitle">Le classement en ligne nécessite une connexion Internet. Reconnecte-toi puis reviens ici.</p>
+    </div>
+
+    <div id="board-setup" style="display:none">
+      <p class="subtitle">Rejoins le classement de ton groupe : choisis un <b>pseudo</b> et entre le <b>code de groupe</b> (le même mot secret pour toute ta famille — demande-le à un adulte).</p>
+      <input id="board-pseudo" type="text" maxlength="16" placeholder="Ton pseudo" autocomplete="off"
+        style="width:100%;padding:12px;font-size:16px;font-family:inherit;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;box-sizing:border-box;">
+      <input id="board-groupe" type="text" maxlength="40" placeholder="Code de groupe (ex. RIVAS2026)" autocomplete="off"
+        style="width:100%;padding:12px;font-size:16px;font-family:inherit;border:1px solid var(--border);border-radius:10px;margin-bottom:12px;box-sizing:border-box;">
+      <button class="btn-primary" id="btn-board-join">Rejoindre le classement</button>
+    </div>
+
+    <div id="board-main" style="display:none">
+      <p class="board-me" id="board-me" style="font-size:13px;font-weight:600;color:var(--text-accent);background:var(--bg-accent);border-radius:10px;padding:10px 12px;margin:0 0 14px;"></p>
+      <p class="section-label">Classé par pièces 🪙</p>
+      <div id="board-list"></div>
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button class="btn-ghost" id="btn-board-refresh">↻ Rafraîchir</button>
+        <button class="btn-ghost" id="btn-board-edit">Changer pseudo / groupe</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <div id="float-layer"></div>
 
+<!-- Firebase (classement en ligne) — nécessite Internet ; l'appli fonctionne sans, en local -->
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
 <script>
 window.addEventListener('error',function(ev){
+  if(!ev || !ev.message) return;   // ignore les erreurs de chargement de ressources (ex. Firebase/CDN hors-ligne)
   var d=document.createElement('div');
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#791F1F;color:#fff;padding:12px;font:13px -apple-system,sans-serif;';
   d.textContent='⚠️ Erreur : '+(ev.message||ev.error)+'  — ouvre le fichier dans Safari (pas dans WhatsApp).';
@@ -779,7 +822,7 @@ function renderMap(){
 
 /* ---------------- navigation écrans ---------------- */
 function show(id){
-  ['screen-menu','screen-start','screen-map','screen-quiz','screen-boss','screen-end','screen-sprint-start','screen-sprint','screen-sprint-end']
+  ['screen-menu','screen-start','screen-map','screen-quiz','screen-boss','screen-end','screen-sprint-start','screen-sprint','screen-sprint-end','screen-board']
     .forEach(s=>document.getElementById(s).style.display='none');
   document.getElementById(id).style.display='block';
   renderHUD();
@@ -1157,6 +1200,7 @@ function endSprint(){
   const recsBefore=sprintRecords();
   const prevBest=recsBefore.length?recsBefore[0].ms:Infinity;
   const isBest=totalMs<prevBest;
+  if(!profile.bestSprintMs || totalMs<profile.bestSprintMs){ profile.bestSprintMs=totalMs; saveProfile(); }
   if(totalMs<30000) unlockBadge('sprint_fast');
   if(isBest || recsBefore.length===0){ confetti(60); soundWin(); }
   show('screen-sprint-end');
@@ -1216,10 +1260,10 @@ const STORAGE_OK=hasStorage();
 
 /* ================= PROFIL / RÉCOMPENSES ================= */
 const PROFILE_KEY='revisions-profil-v1';
-let profile={coins:0,stars:0,badges:[],muted:false,bestStreak:0,totalCorrect:0};
+let profile={coins:0,stars:0,badges:[],muted:false,bestStreak:0,totalCorrect:0,bestSprintMs:null};
 let sessionStreak=0;
 function loadProfile(){ if(!STORAGE_OK) return; try{const r=localStorage.getItem(PROFILE_KEY); if(r){profile=Object.assign(profile,JSON.parse(r)); if(!Array.isArray(profile.badges)) profile.badges=[];}}catch(e){} }
-function saveProfile(){ if(!STORAGE_OK) return; try{localStorage.setItem(PROFILE_KEY,JSON.stringify(profile));}catch(e){} }
+function saveProfile(){ if(STORAGE_OK){ try{localStorage.setItem(PROFILE_KEY,JSON.stringify(profile));}catch(e){} } cloudSyncSoon(); }
 function renderHUD(){
   const c=document.getElementById('hud-coins'); if(c) c.textContent='🪙 '+profile.coins;
   const s=document.getElementById('hud-streak'); if(s){ if(sessionStreak>=2){s.style.display='';s.textContent='🔥 '+sessionStreak;} else s.style.display='none'; }
@@ -1306,6 +1350,90 @@ function renderBadges(){
   const cnt=document.getElementById('mp-badgecount');
   if(cnt){ const n=(profile.badges||[]).filter(id=>BADGES.find(b=>b.id===id)).length; cnt.textContent=n+' / '+BADGES.length+' 🏅'; }
 }
+/* ================= CLASSEMENT EN LIGNE (Firebase Firestore) ================= */
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyCEZlHRb7Eny-7WIkDhRtrNu5ZU19wHB3k",
+  authDomain:"quizz-cm1cm2.firebaseapp.com",
+  projectId:"quizz-cm1cm2",
+  storageBucket:"quizz-cm1cm2.firebasestorage.app",
+  messagingSenderId:"1040889792712",
+  appId:"1:1040889792712:web:cb1884a061ec757561fdfd"
+};
+let db=null;
+const CLOUD_KEY='revisions-cloud-v1';
+let cloud={pseudo:'',groupe:''};
+function loadCloud(){ if(!STORAGE_OK) return; try{const r=localStorage.getItem(CLOUD_KEY); if(r) cloud=Object.assign(cloud,JSON.parse(r));}catch(e){} }
+function saveCloud(){ if(!STORAGE_OK) return; try{localStorage.setItem(CLOUD_KEY,JSON.stringify(cloud));}catch(e){} }
+function cloudInit(){ try{ if(window.firebase && FIREBASE_CONFIG.apiKey){ firebase.initializeApp(FIREBASE_CONFIG); db=firebase.firestore(); } }catch(e){ db=null; } }
+function cloudReady(){ return !!db; }
+function pseudoKey(p){ return (p||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'').slice(0,32)||'joueur'; }
+function groupeKey(g){ return (g||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,40); }
+let _cloudTimer=null;
+function cloudSyncSoon(){ if(!cloudReady()||!cloud.pseudo||!cloud.groupe) return; clearTimeout(_cloudTimer); _cloudTimer=setTimeout(cloudSync,1500); }
+function cloudSync(){
+  if(!cloudReady()||!cloud.pseudo||!cloud.groupe) return;
+  try{
+    db.collection('groupes').doc(cloud.groupe).collection('joueurs').doc(pseudoKey(cloud.pseudo)).set({
+      pseudo:cloud.pseudo.slice(0,16),
+      coins:Math.floor(profile.coins||0),
+      stars:Math.floor(profile.stars||0),
+      badges:(profile.badges||[]).length,
+      sprintMs: profile.bestSprintMs?Math.floor(profile.bestSprintMs):null,
+      maj:firebase.firestore.FieldValue.serverTimestamp()
+    },{merge:true}).catch(function(){});
+  }catch(e){}
+}
+function openBoard(){
+  show('screen-board');
+  const setup=document.getElementById('board-setup'), main=document.getElementById('board-main'), off=document.getElementById('board-offline');
+  setup.style.display='none'; main.style.display='none'; off.style.display='none';
+  if(!cloudReady()){ off.style.display='block'; return; }
+  if(!cloud.pseudo || !cloud.groupe){
+    setup.style.display='block';
+    document.getElementById('board-pseudo').value=cloud.pseudo||'';
+    document.getElementById('board-groupe').value=cloud.groupe||'';
+    return;
+  }
+  main.style.display='block'; cloudSync(); loadLeaderboard();
+}
+function boardJoin(){
+  const p=(document.getElementById('board-pseudo').value||'').trim().slice(0,16);
+  const g=groupeKey(document.getElementById('board-groupe').value||'');
+  if(p.length<2){ alert('Choisis un pseudo (au moins 2 lettres).'); return; }
+  if(g.length<3){ alert('Le code de groupe doit faire au moins 3 caractères (lettres ou chiffres).'); return; }
+  cloud.pseudo=p; cloud.groupe=g; saveCloud();
+  cloudSync();
+  document.getElementById('board-setup').style.display='none';
+  document.getElementById('board-main').style.display='block';
+  loadLeaderboard();
+}
+function loadLeaderboard(){
+  if(!cloudReady()||!cloud.groupe) return;
+  const list=document.getElementById('board-list');
+  const meBox=document.getElementById('board-me');
+  meBox.textContent='Toi : '+cloud.pseudo+' — 🪙 '+(profile.coins||0)+' · ⭐ '+(profile.stars||0)+'   (groupe : '+cloud.groupe+')';
+  list.innerHTML='<p style="font-size:14px;color:var(--text-secondary)">Chargement…</p>';
+  db.collection('groupes').doc(cloud.groupe).collection('joueurs').orderBy('coins','desc').limit(50).get()
+    .then(function(snap){
+      const rows=[]; snap.forEach(function(d){ rows.push(d.data()); });
+      if(!rows.length){ list.innerHTML='<p style="font-size:14px;color:var(--text-secondary)">Personne dans ce groupe pour l\'instant. Sois le premier ! 🎉</p>'; return; }
+      const meKey=pseudoKey(cloud.pseudo); let h='';
+      rows.forEach(function(r,i){
+        const mine=(pseudoKey(r.pseudo||'')===meKey);
+        const medal=['🥇','🥈','🥉'][i]||((i+1)+'.');
+        const sp=r.sprintMs?(' · ⚡ '+fmtTime(r.sprintMs)):'';
+        h+='<div class="rec-row'+(mine?' rec-top':'')+'">'
+          +'<span class="rec-rank">'+medal+'</span>'
+          +'<span class="rec-name">'+escapeHtml(r.pseudo||'?')+(mine?' ⭐':'')+'</span>'
+          +'<span class="rec-time">🪙 '+(r.coins||0)+'</span>'
+          +'<span class="rec-meta">⭐ '+(r.stars||0)+sp+'</span>'
+          +'</div>';
+      });
+      list.innerHTML=h;
+    })
+    .catch(function(e){ list.innerHTML='<p style="font-size:14px;color:var(--danger-text)">Impossible de charger le classement (connexion Internet ou règles Firestore à vérifier).</p>'; });
+}
+
 function saveProgress(){
   if(!STORAGE_OK) return;
   try{
@@ -1415,6 +1543,16 @@ document.getElementById('card-aventure').addEventListener('click',()=>{
 document.getElementById('card-sprint').addEventListener('click',()=>{
   renderSprintRecords('sprint-records'); show('screen-sprint-start');
 });
+document.getElementById('card-board').addEventListener('click',openBoard);
+document.getElementById('btn-board-back').addEventListener('click',goToMenu);
+document.getElementById('btn-board-join').addEventListener('click',boardJoin);
+document.getElementById('btn-board-refresh').addEventListener('click',loadLeaderboard);
+document.getElementById('btn-board-edit').addEventListener('click',()=>{
+  document.getElementById('board-setup').style.display='block';
+  document.getElementById('board-main').style.display='none';
+  document.getElementById('board-pseudo').value=cloud.pseudo||'';
+  document.getElementById('board-groupe').value=cloud.groupe||'';
+});
 document.getElementById('btn-aventure-back').addEventListener('click',goToMenu);
 document.getElementById('btn-sprint-back').addEventListener('click',goToMenu);
 
@@ -1443,6 +1581,8 @@ document.getElementById('hud-mute').addEventListener('click',toggleMute);
 /* ---------------- init ---------------- */
 try{
   loadProfile();
+  loadCloud();
+  cloudInit();
   state=freshState();
   buildSubjectGrid();
   refreshResumeUI();
