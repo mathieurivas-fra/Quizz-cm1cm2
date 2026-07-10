@@ -203,7 +203,9 @@
   @media(hover:hover){.game-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);border-color:var(--accent);}}
   /* onglets du classement */
   .board-tabs{display:flex;gap:8px;margin-bottom:12px;}
-  .board-tab{flex:1;}
+  .board-tab{flex:1;padding:8px 6px;}
+  #tour-options{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  #tour-options button{text-align:left;padding:13px 14px;font-size:16px;}
   .board-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
   /* avatars sur le podium/classement */
   .pod-ava{font-size:30px;line-height:1;}
@@ -277,6 +279,13 @@
       <div class="game-txt">
         <p class="game-name">Sprint Multiplications</p>
         <p class="game-desc">20 multiplications le plus vite possible. Bats ton record !</p>
+      </div>
+    </div>
+    <div class="game-card" id="card-tour">
+      <div class="game-emoji">🗼</div>
+      <div class="game-txt">
+        <p class="game-name">La Tour des Savoirs</p>
+        <p class="game-desc">Grimpe le plus haut possible ! Une question par étage, ça se corse... 3 vies.</p>
       </div>
     </div>
     <div class="game-card" id="card-board">
@@ -438,6 +447,26 @@
     <button class="btn-primary" id="btn-restart">Rejouer l'aventure</button>
   </div>
 
+  <!-- ========== LA TOUR DES SAVOIRS ========== -->
+  <div id="screen-tour">
+    <div id="tour-play">
+      <div class="topbar">
+        <span id="tour-floor" style="font-size:15px;font-weight:800;color:var(--text-accent);"></span>
+        <span class="lives" id="tour-lives"></span>
+      </div>
+      <div class="topbar" style="margin-bottom:14px;">
+        <span id="tour-badge" style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--bg-accent);color:var(--text-accent);"></span>
+        <span class="q-diff" id="tour-diff"></span>
+      </div>
+      <p id="tour-q" style="font-size:17px;font-weight:600;margin:0 0 16px;line-height:1.5;"></p>
+      <div id="tour-options"></div>
+      <div id="tour-feedback" style="font-size:14px;font-weight:600;min-height:20px;margin-bottom:8px;"></div>
+      <button id="tour-next" style="display:none;width:100%;padding:13px;font-weight:600;">Continuer</button>
+      <div class="quit-row"><button class="btn-ghost" id="btn-tour-quit">Quitter la tour</button></div>
+    </div>
+    <div id="tour-over" style="display:none;"></div>
+  </div>
+
   <!-- ========== CLASSEMENT EN LIGNE ========== -->
   <div id="screen-board">
     <div class="map-head">
@@ -462,6 +491,7 @@
       <p class="board-me" id="board-me" style="font-size:13px;font-weight:600;color:var(--text-accent);background:var(--bg-accent);border-radius:10px;padding:10px 12px;margin:0 0 12px;"></p>
       <div class="board-tabs">
         <button class="btn-ghost board-tab active" id="bt-aventure">🏰 Aventure</button>
+        <button class="btn-ghost board-tab" id="bt-tour">🗼 Tour</button>
         <button class="btn-ghost board-tab" id="bt-sprint">⚡ Sprint</button>
       </div>
       <div id="board-podium" class="podium" style="display:none"></div>
@@ -989,7 +1019,7 @@ function renderMap(){
 
 /* ---------------- navigation écrans ---------------- */
 function show(id){
-  ['screen-menu','screen-start','screen-map','screen-quiz','screen-boss','screen-end','screen-sprint-start','screen-sprint','screen-sprint-end','screen-board','screen-shop','screen-parent']
+  ['screen-menu','screen-start','screen-map','screen-quiz','screen-boss','screen-end','screen-sprint-start','screen-sprint','screen-sprint-end','screen-board','screen-shop','screen-parent','screen-tour']
     .forEach(s=>document.getElementById(s).style.display='none');
   document.getElementById(id).style.display='block';
   renderHUD();
@@ -1465,7 +1495,7 @@ const STORAGE_OK=hasStorage();
 
 /* ================= PROFIL / RÉCOMPENSES ================= */
 const PROFILE_KEY='revisions-profil-v1';
-let profile={coins:0,stars:0,badges:[],muted:false,bestStreak:0,totalCorrect:0,bestSprintMs:null,avatar:'🧒',theme:'default',owned:['a_kid','default'],compStats:{},adminHash:null};
+let profile={coins:0,stars:0,badges:[],muted:false,bestStreak:0,totalCorrect:0,bestSprintMs:null,avatar:'🧒',theme:'default',owned:['a_kid','default'],compStats:{},adminHash:null,bestTower:0};
 let sessionStreak=0;
 function loadProfile(){ if(!STORAGE_OK) return; try{const r=localStorage.getItem(PROFILE_KEY); if(r){profile=Object.assign(profile,JSON.parse(r)); if(!Array.isArray(profile.badges)) profile.badges=[];}}catch(e){} }
 function saveProfile(){ if(STORAGE_OK){ try{localStorage.setItem(PROFILE_KEY,JSON.stringify(profile));}catch(e){} } cloudSyncSoon(); }
@@ -1544,7 +1574,8 @@ const BADGES=[
   {id:'boss_win',ico:'👑',name:'Roi du Royaume',hint:'Bats le Boss du château.'},
   {id:'sprint_fast',ico:'⚡',name:'Sprint < 30 s',hint:'Termine un Sprint en moins de 30 secondes.'},
   {id:'scholar',ico:'🎓',name:'200 bonnes rép.',hint:'Atteins 200 bonnes réponses au total.'},
-  {id:'group_champ',ico:'🏆',name:'Champion du groupe',hint:'Sois 1er du classement de ton groupe (au moins 2 joueurs).'}
+  {id:'group_champ',ico:'🏆',name:'Champion du groupe',hint:'Sois 1er du classement de ton groupe (au moins 2 joueurs).'},
+  {id:'tower15',ico:'🗼',name:'Grimpeur',hint:'Atteins l\'étage 15 de la Tour des Savoirs.'}
 ];
 function badgeInfo(id){
   const b=BADGES.find(x=>x.id===id); if(!b) return;
@@ -1594,6 +1625,7 @@ function cloudSync(){
       stars:Math.floor(profile.stars||0),
       badges:(profile.badges||[]).length,
       sprintMs: profile.bestSprintMs?Math.floor(profile.bestSprintMs):null,
+      tower: Math.floor(profile.bestTower||0),
       maj:firebase.firestore.FieldValue.serverTimestamp()
     },{merge:true}).catch(function(){});
   }catch(e){}
@@ -1623,7 +1655,7 @@ function boardJoin(){
   loadLeaderboard();
 }
 let boardRows=[], boardTab='aventure';
-function setBoardTab(t){ boardTab=t; const a=document.getElementById('bt-aventure'), s=document.getElementById('bt-sprint'); if(a)a.classList.toggle('active',t==='aventure'); if(s)s.classList.toggle('active',t==='sprint'); renderBoard(); }
+function setBoardTab(t){ boardTab=t; ['aventure','tour','sprint'].forEach(function(k){ const b=document.getElementById('bt-'+k); if(b) b.classList.toggle('active',t===k); }); renderBoard(); }
 function renderPodium(rows,tab){
   const pod=document.getElementById('board-podium'); if(!pod) return;
   if(!rows || !rows.length){ pod.innerHTML=''; pod.style.display='none'; return; }
@@ -1633,7 +1665,7 @@ function renderPodium(rows,tab){
   order.forEach(function(ri,pos){
     const r=rows[ri];
     if(!r){ h+='<div class="pod" style="opacity:.25"><div class="pod-top">'+medals[pos]+'</div><div class="pod-ava">·</div><div class="pod-name">—</div><div class="pod-coins">&nbsp;</div><div class="pod-bar" style="height:'+heights[pos]+';background:'+colors[pos]+'"></div></div>'; return; }
-    const val = tab==='sprint' ? ('⚡ '+fmtTime(r.sprintMs)) : ('⭐ '+(r.stars||0));
+    const val = tab==='sprint' ? ('⚡ '+fmtTime(r.sprintMs)) : (tab==='tour' ? ('🗼 '+(r.tower||0)) : ('⭐ '+(r.stars||0)));
     h+='<div class="pod"><div class="pod-top">'+medals[pos]+'</div><div class="pod-ava">'+(r.avatar||'🧒')+'</div><div class="pod-name">'+escapeHtml(r.pseudo||'?')+'</div><div class="pod-coins">'+val+'</div><div class="pod-bar" style="height:'+heights[pos]+';background:'+colors[pos]+'">'+(ri+1)+'</div></div>';
   });
   pod.innerHTML=h;
@@ -1653,6 +1685,10 @@ function renderBoard(){
     if(lbl) lbl.textContent='Classé par temps ⚡ (le plus rapide gagne)';
     rows=rows.filter(function(r){return r.sprintMs!=null;}).sort(function(a,b){return a.sprintMs-b.sprintMs;});
     if(meBox) meBox.textContent='Toi : '+cloud.pseudo+' — ⚡ '+(profile.bestSprintMs?fmtTime(profile.bestSprintMs):'aucun temps')+'   (groupe : '+cloud.groupe+')';
+  } else if(boardTab==='tour'){
+    if(lbl) lbl.textContent='Classé par étage atteint 🗼';
+    rows=rows.filter(function(r){return (r.tower||0)>0;}).sort(function(a,b){ return (b.tower||0)-(a.tower||0); });
+    if(meBox) meBox.textContent='Toi : '+cloud.pseudo+' — 🗼 étage '+(profile.bestTower||0)+'   (groupe : '+cloud.groupe+')';
   } else {
     if(lbl) lbl.textContent='Classé par étoiles ⭐';
     rows.sort(function(a,b){ return (b.stars||0)-(a.stars||0); });
@@ -1660,12 +1696,12 @@ function renderBoard(){
     if(rows.length>=2 && pseudoKey(rows[0].pseudo||'')===meKey) unlockBadge('group_champ');
   }
   renderPodium(rows, boardTab);
-  if(!rows.length){ list.innerHTML='<p style="font-size:14px;color:var(--text-secondary)">'+(boardTab==='sprint'?'Aucun temps de Sprint dans ce groupe. Lance un Sprint !':'Personne dans ce groupe. Sois le premier ! 🎉')+'</p>'; return; }
+  if(!rows.length){ list.innerHTML='<p style="font-size:14px;color:var(--text-secondary)">'+(boardTab==='sprint'?'Aucun temps de Sprint dans ce groupe. Lance un Sprint !':(boardTab==='tour'?'Personne n\'a encore grimpé la Tour. À toi de jouer !':'Personne dans ce groupe. Sois le premier ! 🎉'))+'</p>'; return; }
   let h='';
   rows.forEach(function(r,i){
     const mine=(pseudoKey(r.pseudo||'')===meKey);
     const medal=['🥇','🥈','🥉'][i]||((i+1)+'.');
-    const val = boardTab==='sprint' ? ('⚡ '+fmtTime(r.sprintMs)) : ('⭐ '+(r.stars||0));
+    const val = boardTab==='sprint' ? ('⚡ '+fmtTime(r.sprintMs)) : (boardTab==='tour' ? ('🗼 '+(r.tower||0)) : ('⭐ '+(r.stars||0)));
     h+='<div class="rec-row'+(mine?' rec-top':'')+'">'
       +'<span class="rec-rank">'+medal+'</span>'
       +'<span class="rec-name">'+(r.avatar||'🧒')+' '+escapeHtml(r.pseudo||'?')+(mine?' ⭐':'')+'</span>'
@@ -1783,6 +1819,74 @@ async function adminAction(){
   cloudSync();                       // met à jour le classement (zéros) si connecté
   renderHUD(); renderBadges(); renderParent(); inp.value='';
   alert('Scores réinitialisés ✅');
+}
+
+/* ================= LA TOUR DES SAVOIRS (3e jeu, endless) ================= */
+let tour={floor:0,lives:3,current:null,used:new Set(),over:false,_lastCorrect:false,_dead:false};
+function tourDiff(f){ if(f<=5) return 1; if(f<=12) return 2; return 3; }
+function tourPick(){
+  const diff=tourDiff(tour.floor); let pool=[];
+  BANK.forEach(function(q,i){ if(MULT_CATS.has(q.c))return; if(tour.used.has(i))return; if(q.d!==diff)return; pool.push(i); });
+  if(!pool.length) BANK.forEach(function(q,i){ if(MULT_CATS.has(q.c))return; if(tour.used.has(i))return; pool.push(i); });
+  if(!pool.length){ tour.used=new Set(); BANK.forEach(function(q,i){ if(!MULT_CATS.has(q.c) && q.d===diff) pool.push(i); }); if(!pool.length) BANK.forEach(function(q,i){ if(!MULT_CATS.has(q.c)) pool.push(i); }); }
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function startTour(){
+  tour={floor:1,lives:3,current:null,used:new Set(),over:false,_lastCorrect:false,_dead:false};
+  sessionStreak=0;
+  document.getElementById('tour-over').style.display='none';
+  document.getElementById('tour-play').style.display='block';
+  show('screen-tour'); loadTourQuestion();
+}
+function renderTourLives(){ let h=''; for(let k=0;k<3;k++) h+='<span class="heart">'+(k<tour.lives?'❤️':'🤍')+'</span>'; document.getElementById('tour-lives').innerHTML=h; }
+function loadTourQuestion(){
+  const idx=tourPick(); tour.used.add(idx); const q=shuffleQ(BANK[idx]); tour.current={idx,q};
+  document.getElementById('tour-floor').textContent='🗼 Étage '+tour.floor;
+  document.getElementById('tour-badge').textContent=q.m+' · '+q.c;
+  const dd=document.getElementById('tour-diff'); dd.textContent=['','facile','moyen','difficile'][q.d]; dd.className='q-diff diff-'+q.d;
+  document.getElementById('tour-q').textContent=q.q;
+  document.getElementById('tour-feedback').textContent='';
+  document.getElementById('tour-next').style.display='none';
+  renderTourLives();
+  const opts=document.getElementById('tour-options'); opts.innerHTML='';
+  q.o.forEach(function(opt,i){ const b=document.createElement('button'); b.textContent=opt; b.addEventListener('click',function(){answerTour(i);}); opts.appendChild(b); });
+}
+function answerTour(i){
+  const q=tour.current.q; const correct=(i===q.a); tour._lastCorrect=correct; recordStat(q.c,correct);
+  const opts=document.getElementById('tour-options').children;
+  for(let j=0;j<opts.length;j++){ opts[j].disabled=true;
+    if(j===q.a){opts[j].style.background='var(--success-bg)';opts[j].style.borderColor='var(--success-border)';opts[j].style.color='var(--success-text)';}
+    if(j===i&&!correct){opts[j].style.background='var(--danger-bg)';opts[j].style.borderColor='var(--danger-border)';opts[j].style.color='var(--danger-text)';}
+  }
+  const fb=document.getElementById('tour-feedback'), nb=document.getElementById('tour-next');
+  if(correct){ gainCorrect(8,true); opts[i].classList.add('pop'); fb.textContent='✅ Bravo ! Tu montes d\'un étage.'; fb.style.color='var(--success-text)'; }
+  else { tour.lives--; onWrong(); renderTourLives(); fb.textContent='❌ Aïe ! La bonne réponse est surlignée.'; fb.style.color='var(--danger-text)'; }
+  if(!correct && tour.lives<=0){ tour._dead=true; nb.textContent='Voir mon score 🗼'; }
+  else { tour._dead=false; nb.textContent = correct ? ('Monter à l\'étage '+(tour.floor+1)+' →') : 'Continuer (nouvelle question)'; }
+  nb.style.display='block';
+}
+function tourNext(){
+  if(tour._dead){ tourGameOver(); return; }
+  if(tour._lastCorrect) tour.floor++;
+  loadTourQuestion();
+}
+function tourGameOver(){
+  tour.over=true;
+  const reached=tour.floor;
+  const prevBest=profile.bestTower||0, isBest=reached>prevBest;
+  if(isBest) profile.bestTower=reached;
+  if(reached>=15) unlockBadge('tower15');
+  saveProfile();   // synchronise le record de tour au classement
+  document.getElementById('tour-play').style.display='none';
+  const ov=document.getElementById('tour-over'); ov.style.display='block';
+  ov.innerHTML='<div class="banner '+(isBest?'banner-win':'')+'"'+(isBest?'':' style="background:var(--bg-accent);color:var(--text-accent)"')+'>'+(isBest?'🏆 Nouveau record !':'Bien joué, la tour est haute !')+'</div>'
+    +'<div class="end-score"><span class="num">🗼 '+reached+'</span><span class="label">étage atteint</span></div>'
+    +'<div class="row-card"><span>Ton record</span><span>🗼 '+(profile.bestTower||reached)+'</span></div>'
+    +'<button class="btn-primary" id="btn-tour-again" style="margin-top:14px;">Rejouer</button>'
+    +'<button class="btn-ghost" id="btn-tour-menu" style="width:100%;margin-top:8px;">← Menu</button>';
+  document.getElementById('btn-tour-again').addEventListener('click',startTour);
+  document.getElementById('btn-tour-menu').addEventListener('click',goToMenu);
+  if(isBest){ confetti(60); soundWin(); }
 }
 
 function saveProgress(){
@@ -1905,7 +2009,16 @@ document.getElementById('btn-board-back').addEventListener('click',goToMenu);
 document.getElementById('btn-board-join').addEventListener('click',boardJoin);
 document.getElementById('btn-board-refresh').addEventListener('click',loadLeaderboard);
 document.getElementById('bt-aventure').addEventListener('click',function(){ setBoardTab('aventure'); });
+document.getElementById('bt-tour').addEventListener('click',function(){ setBoardTab('tour'); });
 document.getElementById('bt-sprint').addEventListener('click',function(){ setBoardTab('sprint'); });
+document.getElementById('card-tour').addEventListener('click',startTour);
+document.getElementById('tour-next').addEventListener('click',tourNext);
+document.getElementById('btn-tour-quit').addEventListener('click',function(){
+  askConfirm('Quitter la tour ? Ta montée en cours sera enregistrée si c\'est ton record.',function(){
+    if((profile.bestTower||0) < tour.floor){ profile.bestTower=tour.floor; saveProfile(); }
+    goToMenu();
+  });
+});
 document.getElementById('btn-board-edit').addEventListener('click',()=>{
   document.getElementById('board-setup').style.display='block';
   document.getElementById('board-main').style.display='none';
