@@ -191,6 +191,33 @@
   .shop-price{font-size:12px;font-weight:700;color:var(--gold);}
   .shop-choose{font-size:12px;font-weight:700;color:var(--accent);}
   .shop-sel{font-size:12px;font-weight:700;color:var(--success-text);}
+  /* bannière d'accueil */
+  .hero-banner{position:relative;display:flex;align-items:center;gap:14px;padding:18px 16px;margin-bottom:14px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,var(--accent),var(--text-accent));color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.14);}
+  .hero-deco{position:absolute;right:-8px;bottom:-14px;font-size:78px;opacity:.18;transform:rotate(-8deg);pointer-events:none;}
+  .hero-avatar{font-size:46px;line-height:1;flex:none;filter:drop-shadow(0 3px 4px rgba(0,0,0,.28));animation:herobob 3s ease-in-out infinite;}
+  @keyframes herobob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  .hero-txt{position:relative;z-index:1;}
+  .hero-hello{margin:0 0 2px;font-size:13px;opacity:.92;font-weight:600;}
+  .hero-title{margin:0;font-size:19px;font-weight:800;line-height:1.2;}
+  .game-card{transition:transform .1s,box-shadow .15s,border-color .15s;}
+  @media(hover:hover){.game-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);border-color:var(--accent);}}
+  /* avatars sur le podium/classement */
+  .pod-ava{font-size:30px;line-height:1;}
+  /* scénette cinématique de fin de niveau */
+  #cine{position:fixed;inset:0;z-index:1400;display:none;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at 50% 28%,#ffffff,var(--bg-accent) 65%,var(--gold-bg));}
+  #cine.show{display:flex;animation:cinefade .3s ease;}
+  @keyframes cinefade{from{opacity:0}to{opacity:1}}
+  .cine-inner{text-align:center;width:100%;max-width:420px;}
+  .cine-scene{position:relative;height:74px;margin-bottom:8px;background:linear-gradient(#EAF3DE,#F2F6EA 70%,#FBF1D8);border-radius:14px;border:1px solid var(--border);overflow:hidden;}
+  .cine-flag-in{position:absolute;bottom:8px;right:12px;font-size:34px;}
+  .cine-hero{position:absolute;bottom:8px;left:10px;font-size:42px;animation:cinewalk 1.15s ease-out forwards;}
+  @keyframes cinewalk{0%{left:10px;transform:translateY(0)}20%{transform:translateY(-11px)}40%{transform:translateY(0)}60%{transform:translateY(-9px)}80%{transform:translateY(0)}100%{left:calc(100% - 56px);transform:translateY(0)}}
+  .cine-title{font-size:23px;font-weight:800;color:var(--text-accent);margin:8px 0 2px;}
+  .cine-stars{font-size:40px;letter-spacing:8px;min-height:48px;margin:6px 0;}
+  .cine-star{display:inline-block;color:#D6D3C7;}
+  .cine-star.on{color:var(--gold);transform:scale(0);animation:starpop .45s ease forwards;}
+  @keyframes starpop{0%{transform:scale(0) rotate(-30deg)}70%{transform:scale(1.35) rotate(10deg)}100%{transform:scale(1) rotate(0)}}
+  .cine-reward{font-size:19px;font-weight:800;color:var(--gold);margin-bottom:6px;}
 </style>
 </head>
 <body>
@@ -214,8 +241,14 @@
 
   <!-- ========== MENU PRINCIPAL ========== -->
   <div id="screen-menu">
-    <h1>Mes Révisions CM1 – CM2</h1>
-    <p class="subtitle">Choisis ton jeu.</p>
+    <div class="hero-banner">
+      <span class="hero-deco">🏰</span>
+      <span class="hero-avatar" id="menu-avatar">🧒</span>
+      <div class="hero-txt">
+        <p class="hero-hello" id="menu-hello">Prêt pour l'aventure&nbsp;?</p>
+        <h1 class="hero-title">Mes Révisions CM1 · CM2</h1>
+      </div>
+    </div>
     <div class="menu-profile">
       <span>🪙 <b id="mp-coins">0</b> pièces&nbsp; ·&nbsp; <b id="mp-stars">0</b> ⭐</span>
       <span id="mp-badgecount" style="font-size:12px;color:var(--text-muted);"></span>
@@ -440,6 +473,19 @@
     <div id="shop-themes"></div>
   </div>
 
+</div>
+
+<div id="cine">
+  <div class="cine-inner">
+    <div class="cine-scene">
+      <span class="cine-flag-in">🏁</span>
+      <span class="cine-hero" id="cine-hero">🧒</span>
+    </div>
+    <div class="cine-title" id="cine-title">Niveau réussi !</div>
+    <div class="cine-stars" id="cine-stars"></div>
+    <div class="cine-reward" id="cine-reward"></div>
+    <button class="btn-primary" id="cine-btn" style="max-width:220px;margin:8px auto 0;">Continuer →</button>
+  </div>
 </div>
 
 <div id="float-layer"></div>
@@ -993,8 +1039,21 @@ function completeLevel(stars){
   if(s>=3) unlockBadge('perfect_level');
   state.currentLevel++;
   if(state.currentLevel>state.maxUnlocked) state.maxUnlocked=state.currentLevel;
-  saveProgress(); goToMap();
+  saveProgress();
+  playCine(lvl,s,gain);            // petite scénette, puis retour à la carte
 }
+let cineTimer=null;
+function playCine(lvl,stars,gain){
+  const ov=document.getElementById('cine');
+  document.getElementById('cine-hero').textContent=profile.avatar||'🧒';
+  document.getElementById('cine-title').textContent='Niveau '+lvl+' réussi !';
+  const sc=document.getElementById('cine-stars'); sc.innerHTML='';
+  for(let i=0;i<3;i++){ const st=document.createElement('span'); st.className='cine-star'+(i<stars?' on':''); st.textContent='★'; st.style.animationDelay=(0.9+i*0.28)+'s'; sc.appendChild(st); }
+  document.getElementById('cine-reward').textContent='+'+gain+' 🪙';
+  ov.classList.add('show');
+  clearTimeout(cineTimer); cineTimer=setTimeout(endCine,2700);
+}
+function endCine(){ clearTimeout(cineTimer); document.getElementById('cine').classList.remove('show'); goToMap(); }
 
 /* ---------------- BOSS ---------------- */
 function startBoss(){
@@ -1311,6 +1370,8 @@ function loadProfile(){ if(!STORAGE_OK) return; try{const r=localStorage.getItem
 function saveProfile(){ if(STORAGE_OK){ try{localStorage.setItem(PROFILE_KEY,JSON.stringify(profile));}catch(e){} } cloudSyncSoon(); }
 function renderHUD(){
   const a=document.getElementById('hud-avatar'); if(a) a.textContent=profile.avatar||'🧒';
+  const ma=document.getElementById('menu-avatar'); if(ma) ma.textContent=profile.avatar||'🧒';
+  const mh=document.getElementById('menu-hello'); if(mh) mh.textContent=(cloud&&cloud.pseudo)?('Salut '+cloud.pseudo+' !'):'Prêt pour l\'aventure ?';
   const c=document.getElementById('hud-coins'); if(c) c.textContent='🪙 '+profile.coins;
   const s=document.getElementById('hud-streak'); if(s){ if(sessionStreak>=2){s.style.display='';s.textContent='🔥 '+sessionStreak;} else s.style.display='none'; }
   const m=document.getElementById('hud-mute'); if(m) m.textContent=profile.muted?'🔇':'🔊';
@@ -1427,6 +1488,7 @@ function cloudSync(){
   try{
     db.collection('groupes').doc(cloud.groupe).collection('joueurs').doc(pseudoKey(cloud.pseudo)).set({
       pseudo:cloud.pseudo.slice(0,16),
+      avatar:(profile.avatar||'🧒').slice(0,12),
       coins:Math.floor(profile.coins||0),
       stars:Math.floor(profile.stars||0),
       badges:(profile.badges||[]).length,
@@ -1468,7 +1530,7 @@ function renderPodium(rows){
   let h='';
   order.forEach(function(ri,pos){
     const r=rows[ri]; if(!r){ h+='<div class="pod" style="opacity:.25"><div class="pod-top">'+medals[pos]+'</div><div class="pod-name">—</div><div class="pod-coins">&nbsp;</div><div class="pod-bar" style="height:'+heights[pos]+';background:'+colors[pos]+'"></div></div>'; return; }
-    h+='<div class="pod"><div class="pod-top">'+medals[pos]+'</div><div class="pod-name">'+escapeHtml(r.pseudo||'?')+'</div><div class="pod-coins">🪙 '+(r.coins||0)+'</div><div class="pod-bar" style="height:'+heights[pos]+';background:'+colors[pos]+'">'+(ri+1)+'</div></div>';
+    h+='<div class="pod"><div class="pod-top">'+medals[pos]+'</div><div class="pod-ava">'+(r.avatar||'🧒')+'</div><div class="pod-name">'+escapeHtml(r.pseudo||'?')+'</div><div class="pod-coins">🪙 '+(r.coins||0)+'</div><div class="pod-bar" style="height:'+heights[pos]+';background:'+colors[pos]+'">'+(ri+1)+'</div></div>';
   });
   pod.innerHTML=h;
 }
@@ -1491,7 +1553,7 @@ function loadLeaderboard(){
         const sp=r.sprintMs?(' · ⚡ '+fmtTime(r.sprintMs)):'';
         h+='<div class="rec-row'+(mine?' rec-top':'')+'">'
           +'<span class="rec-rank">'+medal+'</span>'
-          +'<span class="rec-name">'+escapeHtml(r.pseudo||'?')+(mine?' ⭐':'')+'</span>'
+          +'<span class="rec-name">'+(r.avatar||'🧒')+' '+escapeHtml(r.pseudo||'?')+(mine?' ⭐':'')+'</span>'
           +'<span class="rec-time">🪙 '+(r.coins||0)+'</span>'
           +'<span class="rec-meta">⭐ '+(r.stars||0)+sp+'</span>'
           +'</div>';
@@ -1677,6 +1739,7 @@ document.getElementById('card-board').addEventListener('click',openBoard);
 document.getElementById('card-shop').addEventListener('click',openShop);
 document.getElementById('hud-avatar').addEventListener('click',openShop);
 document.getElementById('btn-shop-back').addEventListener('click',goToMenu);
+document.getElementById('cine-btn').addEventListener('click',endCine);
 document.getElementById('btn-board-back').addEventListener('click',goToMenu);
 document.getElementById('btn-board-join').addEventListener('click',boardJoin);
 document.getElementById('btn-board-refresh').addEventListener('click',loadLeaderboard);
