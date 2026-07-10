@@ -222,6 +222,8 @@
   .mon-ans{font-size:13.5px;font-weight:700;background:#fff;border:1px solid var(--border2);border-radius:8px;padding:3px 8px;max-width:110px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);}
   .monster.boom{animation:boom .3s ease forwards !important;}
   @keyframes boom{0%{transform:scale(1)}55%{transform:scale(1.45)}100%{transform:scale(0);opacity:0}}
+  .mon-countdown{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:72px;font-weight:800;color:var(--accent);text-shadow:0 3px 10px rgba(0,0,0,.18);z-index:5;pointer-events:none;}
+  @keyframes cdpulse{0%{transform:scale(.5);opacity:0}50%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}
   .board-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
   /* avatars sur le podium/classement */
   .pod-ava{font-size:30px;line-height:1;}
@@ -1957,7 +1959,7 @@ function tourGameOver(){
 }
 
 /* ================= CHASSE AUX MONSTRES (4e jeu, arcade) ================= */
-let mon={wave:0,score:0,lives:3,over:false,q:null};
+let mon={wave:0,score:0,lives:3,over:false,q:null,_timers:[]};
 const MON_EMOJIS=['👾','👹','👺','👻','🐲','👽','🤖','🎃','😈','👿'];
 function monEmoji(){ return MON_EMOJIS[Math.floor(Math.random()*MON_EMOJIS.length)]; }
 function monDiff(){ if(mon.wave<=5) return 1; if(mon.wave<=12) return 2; return 3; }
@@ -1975,7 +1977,8 @@ function monLanes(n){
 function renderMonLives(){ let h=''; for(let k=0;k<3;k++) h+='<span class="heart">'+(k<mon.lives?'❤️':'🤍')+'</span>'; const el=document.getElementById('mon-lives'); if(el) el.innerHTML=h; }
 function renderMonHead(){ const s=document.getElementById('mon-score'); if(s) s.textContent='👾 '+mon.score+'   ·   record '+(profile.bestMonster||0); renderMonLives(); }
 function startMonster(){
-  mon={wave:0,score:0,lives:3,over:false,q:null};
+  clearMonTimers();
+  mon={wave:0,score:0,lives:3,over:false,q:null,_timers:[]};
   sessionStreak=0;
   document.getElementById('mon-over').style.display='none';
   document.getElementById('mon-play').style.display='block';
@@ -1985,8 +1988,10 @@ function startMonster(){
   nextWave();
 }
 function nextWave(){ if(mon.over) return; mon.wave++; monsterWave(); }
+function clearMonTimers(){ if(mon && mon._timers){ mon._timers.forEach(function(t){ clearTimeout(t); }); } if(mon) mon._timers=[]; }
 function monsterWave(){
   if(mon.over) return;
+  clearMonTimers();
   const idx=monPick(); const q=shuffleQ(BANK[idx]); mon.q=q;
   document.getElementById('mon-question').textContent=q.m+' — '+q.q;
   const zone=document.getElementById('mon-zone'); zone.innerHTML='';
@@ -1994,7 +1999,8 @@ function monsterWave(){
   const dur=Math.max(4.5, 9 - mon.wave*0.18);      // descente lente, accélère très progressivement
   q.o.forEach(function(opt,i){
     const m=document.createElement('div'); m.className='monster';
-    m.style.left=lanes[i]+'%'; m.style.animationDuration=dur+'s'; m.style.animationDelay='2s';   // temps de lire la question d'abord
+    // entrée décalée (i*0.6s) => les monstres ne se chevauchent pas ; en pause pendant le décompte
+    m.style.left=lanes[i]+'%'; m.style.animationDuration=dur+'s'; m.style.animationDelay=(i*0.6)+'s'; m.style.animationPlayState='paused';
     m.dataset.correct=(i===q.a)?'1':'0';
     m.innerHTML='<span class="mon-emoji">'+monEmoji()+'</span><span class="mon-ans">'+escapeHtml(opt)+'</span>';
     m.addEventListener('pointerdown',function(ev){ ev.preventDefault(); monsterTap(m); });
@@ -2002,6 +2008,18 @@ function monsterWave(){
     zone.appendChild(m);
   });
   renderMonHead();
+  // décompte 3-2-1 : la question se lit pendant ce temps, puis les monstres descendent
+  const cd=document.createElement('div'); cd.className='mon-countdown'; zone.appendChild(cd);
+  function setCd(txt){ cd.textContent=txt; cd.style.animation='none'; void cd.offsetWidth; cd.style.animation='cdpulse .45s ease'; }
+  setCd('3');
+  mon._timers.push(setTimeout(function(){ if(!mon.over) setCd('2'); },1000));
+  mon._timers.push(setTimeout(function(){ if(!mon.over) setCd('1'); },2000));
+  mon._timers.push(setTimeout(function(){ if(!mon.over) setCd('🚀'); },2700));
+  mon._timers.push(setTimeout(function(){
+    if(mon.over) return;
+    if(cd.parentNode) cd.parentNode.removeChild(cd);
+    const list=zone.querySelectorAll('.monster'); for(let k=0;k<list.length;k++) list[k].style.animationPlayState='running';
+  },3000));
 }
 function monBoom(el){ el.style.animation='none'; el.style.pointerEvents='none'; el.innerHTML='<span class="mon-emoji" style="font-size:40px">💥</span>'; el.classList.add('boom'); setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); },300); }
 function monLoseLife(){ mon.lives--; renderMonLives(); if(mon.lives<=0){ monsterGameOver(); return true; } return false; }
@@ -2028,6 +2046,7 @@ function monsterLanded(m){
 }
 function monsterGameOver(){
   mon.over=true;
+  clearMonTimers();
   document.getElementById('mon-zone').innerHTML='';
   const best=profile.bestMonster||0, isBest=mon.score>best;
   if(isBest){ profile.bestMonster=mon.score; }
@@ -2172,7 +2191,7 @@ document.getElementById('card-tour').addEventListener('click',startTour);
 document.getElementById('card-monster').addEventListener('click',startMonster);
 document.getElementById('btn-mon-quit').addEventListener('click',function(){
   askConfirm('Quitter la chasse ? Ton record est enregistré.',function(){
-    mon.over=true; document.getElementById('mon-zone').innerHTML='';
+    mon.over=true; clearMonTimers(); document.getElementById('mon-zone').innerHTML='';
     if((profile.bestMonster||0) < mon.score){ profile.bestMonster=mon.score; saveProfile(); }
     goToMenu();
   });
