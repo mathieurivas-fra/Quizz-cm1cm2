@@ -224,6 +224,16 @@
   @keyframes boom{0%{transform:scale(1)}55%{transform:scale(1.45)}100%{transform:scale(0);opacity:0}}
   .mon-countdown{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:72px;font-weight:800;color:var(--accent);text-shadow:0 3px 10px rgba(0,0,0,.18);z-index:5;pointer-events:none;}
   @keyframes cdpulse{0%{transform:scale(.5);opacity:0}50%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}
+  /* tchat */
+  #chat-messages{height:42vh;min-height:220px;max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:10px;background:var(--surface-1);display:flex;flex-direction:column;gap:7px;}
+  .chat-empty{color:var(--text-muted);font-size:13px;text-align:center;margin:auto;}
+  .chat-msg{max-width:85%;padding:7px 11px;border-radius:12px;font-size:14px;line-height:1.35;word-break:break-word;}
+  .chat-msg .cm-who{font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:1px;}
+  .chat-msg.them{align-self:flex-start;background:#fff;border:1px solid var(--border);}
+  .chat-msg.me{align-self:flex-end;background:var(--bg-accent);color:var(--text-accent);}
+  #chat-phrases,#chat-emojis{display:flex;flex-wrap:wrap;gap:7px;}
+  #chat-phrases button{font-size:13px;padding:8px 11px;}
+  #chat-emojis button{font-size:22px;padding:5px 10px;line-height:1;}
   .board-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
   /* avatars sur le podium/classement */
   .pod-ava{font-size:30px;line-height:1;}
@@ -318,6 +328,13 @@
       <div class="game-txt">
         <p class="game-name">Classement en ligne</p>
         <p class="game-desc">Rejoins ton groupe et compare tes pièces et tes étoiles avec les autres joueurs !</p>
+      </div>
+    </div>
+    <div class="game-card" id="card-chat">
+      <div class="game-emoji">💬</div>
+      <div class="game-txt">
+        <p class="game-name">Tchat du groupe</p>
+        <p class="game-desc">Envoie des messages rigolos et des emojis à ton groupe !</p>
       </div>
     </div>
     <div class="game-card" id="card-shop">
@@ -491,6 +508,25 @@
       <div class="quit-row"><button class="btn-ghost" id="btn-tour-quit">Quitter la tour</button></div>
     </div>
     <div id="tour-over" style="display:none;"></div>
+  </div>
+
+  <!-- ========== TCHAT DU GROUPE ========== -->
+  <div id="screen-chat">
+    <div class="map-head">
+      <p class="map-title">💬 Tchat du groupe</p>
+      <button class="btn-ghost" id="btn-chat-back">← Menu</button>
+    </div>
+    <div id="chat-need" style="display:none;">
+      <p class="subtitle">Pour discuter avec ton groupe, rejoins-le d'abord (choisis un pseudo + le code de groupe) dans le Classement.</p>
+      <button class="btn-primary" id="btn-chat-join">🏆 Aller au classement</button>
+    </div>
+    <div id="chat-main" style="display:none;">
+      <div id="chat-messages"></div>
+      <p class="section-label" style="margin-top:10px;">Phrases</p>
+      <div id="chat-phrases"></div>
+      <p class="section-label" style="margin-top:8px;">Emojis</p>
+      <div id="chat-emojis"></div>
+    </div>
   </div>
 
   <!-- ========== CHASSE AUX MONSTRES ========== -->
@@ -1060,7 +1096,7 @@ function renderMap(){
 
 /* ---------------- navigation écrans ---------------- */
 function show(id){
-  ['screen-menu','screen-start','screen-map','screen-quiz','screen-boss','screen-end','screen-sprint-start','screen-sprint','screen-sprint-end','screen-board','screen-shop','screen-parent','screen-tour','screen-monster']
+  ['screen-menu','screen-start','screen-map','screen-quiz','screen-boss','screen-end','screen-sprint-start','screen-sprint','screen-sprint-end','screen-board','screen-shop','screen-parent','screen-tour','screen-monster','screen-chat']
     .forEach(s=>document.getElementById(s).style.display='none');
   document.getElementById(id).style.display='block';
   renderHUD();
@@ -2064,6 +2100,50 @@ function monsterGameOver(){
   if(isBest){ confetti(50); soundWin(); }
 }
 
+/* ================= TCHAT DU GROUPE (phrases + emojis, Firestore temps réel) ================= */
+const CHAT_PHRASES=['Salut ! 👋','Bravo ! 🎉','Bien joué !','À toi de jouer !','Trop fort ! 💪','GG 🏆','On rejoue ?','Nouveau record !','Aïe, raté 😅','Bonne chance !','Merci !','Haha 😂'];
+const CHAT_EMOJIS=['👍','❤️','😂','😮','🎉','🔥','⭐','👏','😎','🤩','🙈','🏆'];
+let chatUnsub=null, chatLock=false;
+function unsubscribeChat(){ if(chatUnsub){ try{ chatUnsub(); }catch(e){} chatUnsub=null; } }
+function openChat(){
+  show('screen-chat');
+  const need=document.getElementById('chat-need'), main=document.getElementById('chat-main');
+  if(!cloudReady()||!cloud.pseudo||!cloud.groupe){ need.style.display='block'; main.style.display='none'; return; }
+  need.style.display='none'; main.style.display='block';
+  buildChatButtons();
+  subscribeChat();
+}
+function buildChatButtons(){
+  const pc=document.getElementById('chat-phrases'), ec=document.getElementById('chat-emojis');
+  if(pc && !pc.childElementCount){ CHAT_PHRASES.forEach(function(t){ const b=document.createElement('button'); b.className='btn-ghost'; b.textContent=t; b.addEventListener('click',function(){ sendChat(t); }); pc.appendChild(b); }); }
+  if(ec && !ec.childElementCount){ CHAT_EMOJIS.forEach(function(e){ const b=document.createElement('button'); b.className='btn-ghost'; b.textContent=e; b.addEventListener('click',function(){ sendChat(e); }); ec.appendChild(b); }); }
+}
+function sendChat(text){
+  if(!cloudReady()||!cloud.pseudo||!cloud.groupe) return;
+  if(chatLock) return; chatLock=true; setTimeout(function(){ chatLock=false; },1200);
+  db.collection('groupes').doc(cloud.groupe).collection('chat').add({
+    pseudo:cloud.pseudo.slice(0,16),
+    avatar:(profile.avatar||'🧒').slice(0,12),
+    text:String(text).slice(0,40),
+    ts:firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(function(){});
+}
+function subscribeChat(){
+  unsubscribeChat();
+  chatUnsub=db.collection('groupes').doc(cloud.groupe).collection('chat').orderBy('ts','desc').limit(30)
+    .onSnapshot(function(snap){
+      const arr=[]; snap.forEach(function(d){ arr.push(d.data()); }); arr.reverse();
+      const box=document.getElementById('chat-messages'); if(!box) return;
+      const meKey=pseudoKey(cloud.pseudo);
+      if(!arr.length){ box.innerHTML='<div class="chat-empty">Aucun message. Envoie le premier ! 👇</div>'; return; }
+      box.innerHTML=arr.map(function(m){
+        const mine=(pseudoKey(m.pseudo||'')===meKey);
+        return '<div class="chat-msg '+(mine?'me':'them')+'">'+(mine?'':'<div class="cm-who">'+(m.avatar||'🧒')+' '+escapeHtml(m.pseudo||'?')+'</div>')+escapeHtml(m.text||'')+'</div>';
+      }).join('');
+      box.scrollTop=box.scrollHeight;
+    }, function(){});
+}
+
 function saveProgress(){
   if(!STORAGE_OK) return;
   try{
@@ -2166,7 +2246,7 @@ document.getElementById('btn-newgame').addEventListener('click',()=>{
 });
 
 /* ---- menu principal ---- */
-function goToMenu(){ refreshResumeUI(); renderBadges(); show('screen-menu'); }
+function goToMenu(){ unsubscribeChat(); refreshResumeUI(); renderBadges(); show('screen-menu'); }
 document.getElementById('card-aventure').addEventListener('click',()=>{
   buildSubjectGrid(); refreshResumeUI(); show('screen-start');
 });
@@ -2189,6 +2269,9 @@ document.getElementById('bt-monster').addEventListener('click',function(){ setBo
 document.getElementById('bt-sprint').addEventListener('click',function(){ setBoardTab('sprint'); });
 document.getElementById('card-tour').addEventListener('click',startTour);
 document.getElementById('card-monster').addEventListener('click',startMonster);
+document.getElementById('card-chat').addEventListener('click',openChat);
+document.getElementById('btn-chat-back').addEventListener('click',goToMenu);
+document.getElementById('btn-chat-join').addEventListener('click',openBoard);
 document.getElementById('btn-mon-quit').addEventListener('click',function(){
   askConfirm('Quitter la chasse ? Ton record est enregistré.',function(){
     mon.over=true; clearMonTimers(); document.getElementById('mon-zone').innerHTML='';
