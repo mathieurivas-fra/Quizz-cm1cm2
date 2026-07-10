@@ -2032,7 +2032,7 @@ function monsterWave(){
   document.getElementById('mon-question').textContent=q.m+' — '+q.q;
   const zone=document.getElementById('mon-zone'); zone.innerHTML='';
   const lanes=monLanes(q.o.length);
-  const dur=Math.max(4.5, 9 - mon.wave*0.18);      // descente lente, accélère très progressivement
+  const dur=Math.max(3.6, 7 - mon.wave*0.18);      // descente : ~7s au début, accélère progressivement
   q.o.forEach(function(opt,i){
     const m=document.createElement('div'); m.className='monster';
     // entrée décalée (i*0.6s) => les monstres ne se chevauchent pas ; en pause pendant le décompte
