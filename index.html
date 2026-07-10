@@ -219,7 +219,7 @@
   .monster{position:absolute;top:-64px;width:78px;padding:4px 0;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;animation-name:monfall;animation-timing-function:linear;animation-fill-mode:forwards;}
   @keyframes monfall{from{top:-64px}to{top:112%}}
   .mon-emoji{font-size:38px;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.18));}
-  .mon-ans{font-size:12px;font-weight:700;background:#fff;border:1px solid var(--border2);border-radius:8px;padding:2px 7px;max-width:90px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);}
+  .mon-ans{font-size:13.5px;font-weight:700;background:#fff;border:1px solid var(--border2);border-radius:8px;padding:3px 8px;max-width:110px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);}
   .monster.boom{animation:boom .3s ease forwards !important;}
   @keyframes boom{0%{transform:scale(1)}55%{transform:scale(1.45)}100%{transform:scale(0);opacity:0}}
   .board-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
@@ -1991,10 +1991,10 @@ function monsterWave(){
   document.getElementById('mon-question').textContent=q.m+' — '+q.q;
   const zone=document.getElementById('mon-zone'); zone.innerHTML='';
   const lanes=monLanes(q.o.length);
-  const dur=Math.max(2.4, 5.4 - mon.wave*0.12);
+  const dur=Math.max(4.5, 9 - mon.wave*0.18);      // descente lente, accélère très progressivement
   q.o.forEach(function(opt,i){
     const m=document.createElement('div'); m.className='monster';
-    m.style.left=lanes[i]+'%'; m.style.animationDuration=dur+'s';
+    m.style.left=lanes[i]+'%'; m.style.animationDuration=dur+'s'; m.style.animationDelay='0.8s';   // temps de lire la question d'abord
     m.dataset.correct=(i===q.a)?'1':'0';
     m.innerHTML='<span class="mon-emoji">'+monEmoji()+'</span><span class="mon-ans">'+escapeHtml(opt)+'</span>';
     m.addEventListener('pointerdown',function(ev){ ev.preventDefault(); monsterTap(m); });
