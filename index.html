@@ -221,7 +221,7 @@
         <p class="game-desc">Rejoins ton groupe et compare tes pièces et tes étoiles avec les autres joueurs !</p>
       </div>
     </div>
-    <p class="section-label" style="margin-top:6px;">🏅 Mes trophées</p>
+    <p class="section-label" style="margin-top:6px;">🏅 Mes trophées <span style="font-weight:400;color:var(--text-muted);font-size:12px;">— touche un trophée pour voir comment le gagner</span></p>
     <div id="badges-wrap"></div>
   </div>
 
@@ -1328,15 +1328,20 @@ function gainCorrect(base,useStreak){
 function onWrong(){ sessionStreak=0; renderHUD(); soundWrong(); }
 /* trophées */
 const BADGES=[
-  {id:'first_correct',ico:'🌟',name:'1re bonne réponse'},
-  {id:'streak5',ico:'🔥',name:'Série de 5'},
-  {id:'perfect_level',ico:'💎',name:'Niveau parfait'},
-  {id:'coins100',ico:'💰',name:'100 pièces'},
-  {id:'coins500',ico:'🏦',name:'500 pièces'},
-  {id:'boss_win',ico:'👑',name:'Roi du Royaume'},
-  {id:'sprint_fast',ico:'⚡',name:'Sprint < 30 s'},
-  {id:'scholar',ico:'🎓',name:'200 bonnes rép.'}
+  {id:'first_correct',ico:'🌟',name:'1re bonne réponse',hint:'Donne ta première bonne réponse.'},
+  {id:'streak5',ico:'🔥',name:'Série de 5',hint:'Réussis 5 bonnes réponses d\'affilée.'},
+  {id:'perfect_level',ico:'💎',name:'Niveau parfait',hint:'Termine un niveau sans perdre de vie (3 étoiles).'},
+  {id:'coins100',ico:'💰',name:'100 pièces',hint:'Cumule 100 pièces d\'or.'},
+  {id:'coins500',ico:'🏦',name:'500 pièces',hint:'Cumule 500 pièces d\'or.'},
+  {id:'boss_win',ico:'👑',name:'Roi du Royaume',hint:'Bats le Boss du château.'},
+  {id:'sprint_fast',ico:'⚡',name:'Sprint < 30 s',hint:'Termine un Sprint en moins de 30 secondes.'},
+  {id:'scholar',ico:'🎓',name:'200 bonnes rép.',hint:'Atteins 200 bonnes réponses au total.'}
 ];
+function badgeInfo(id){
+  const b=BADGES.find(x=>x.id===id); if(!b) return;
+  const got=(profile.badges||[]).indexOf(id)>=0;
+  alert(b.ico+'  '+b.name+'\n\n'+b.hint+'\n\n'+(got?'✅ Débloqué, bravo !':'🔒 Pas encore obtenu.'));
+}
 function unlockBadge(id){
   if(!profile.badges) profile.badges=[];
   if(profile.badges.indexOf(id)>=0) return;
@@ -1346,9 +1351,9 @@ function unlockBadge(id){
 }
 function renderBadges(){
   const w=document.getElementById('badges-wrap'); if(!w) return;
-  w.innerHTML=BADGES.map(b=>'<div class="badge'+((profile.badges&&profile.badges.indexOf(b.id)>=0)?' on':'')+'"><span class="b-ico">'+b.ico+'</span><span class="b-name">'+b.name+'</span></div>').join('');
+  w.innerHTML=BADGES.map(b=>'<div class="badge'+((profile.badges&&profile.badges.indexOf(b.id)>=0)?' on':'')+'" style="cursor:pointer" onclick="badgeInfo(\''+b.id+'\')" title="'+b.hint+'"><span class="b-ico">'+b.ico+'</span><span class="b-name">'+b.name+'</span></div>').join('');
   const cnt=document.getElementById('mp-badgecount');
-  if(cnt){ const n=(profile.badges||[]).filter(id=>BADGES.find(b=>b.id===id)).length; cnt.textContent=n+' / '+BADGES.length+' 🏅'; }
+  if(cnt){ const n=(profile.badges||[]).filter(id=>BADGES.find(b=>b.id===id)).length; cnt.textContent='🏅 '+n+'/'+BADGES.length+' trophées'; }
 }
 /* ================= CLASSEMENT EN LIGNE (Firebase Firestore) ================= */
 const FIREBASE_CONFIG={
