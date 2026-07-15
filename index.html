@@ -186,6 +186,8 @@
   .shop-item:active{transform:scale(.97);}
   .shop-item.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--bg-accent);}
   .shop-emoji{font-size:34px;line-height:1;}
+  .ava-img{display:inline-block;vertical-align:middle;border-radius:6px;object-fit:contain;background:#fff;}
+  .shop-emoji-img{width:46px;height:46px;border-radius:8px;object-fit:contain;background:#fff;display:block;}
   .shop-swatch{width:38px;height:38px;border-radius:50%;border:1px solid rgba(0,0,0,.1);}
   .shop-name{font-size:12px;font-weight:600;}
   .shop-price{font-size:12px;font-weight:700;color:var(--gold);}
@@ -1077,7 +1079,7 @@ function renderMap(){
       svg+='<circle cx="'+p.x+'" cy="'+p.y+'" r="'+(rr+4)+'" fill="none" stroke="#185FA5" stroke-width="2">'
          +'<animate attributeName="r" values="'+(rr+3)+';'+(rr+10)+';'+(rr+3)+'" dur="1.6s" repeatCount="indefinite"/>'
          +'<animate attributeName="opacity" values="0.7;0;0.7" dur="1.6s" repeatCount="indefinite"/></circle>';
-      svg+='<text x="'+p.x+'" y="'+(p.y-26)+'" font-size="26" text-anchor="middle">'+(profile.avatar||'🧒')+'</text>';
+      svg+=avaSVG(profile.avatar, p.x, p.y-24, 30);
     }
     if(state.won && isBoss){
       svg+='<text x="'+p.x+'" y="'+(p.y-26)+'" font-size="26" text-anchor="middle">👑</text>';
@@ -1244,7 +1246,7 @@ function playCine(lvl,stars,gain){
   const castleSize=22+Math.round((state.currentLevel/BOSS_LEVEL)*22);
   let starsH=''; for(let i=0;i<3;i++){ starsH+='<span class="cine-star'+(i<stars?' on':'')+'" style="animation-delay:'+(0.9+i*0.28)+'s">★</span>'; }
   document.getElementById('cine-body').innerHTML=
-    '<div class="cine-scene"><span class="cine-castle" style="font-size:'+castleSize+'px">🏰</span><span class="cine-flag-in">🏁</span><span class="cine-hero">'+(profile.avatar||'🧒')+'</span></div>'
+    '<div class="cine-scene"><span class="cine-castle" style="font-size:'+castleSize+'px">🏰</span><span class="cine-flag-in">🏁</span><span class="cine-hero">'+avaHTML(profile.avatar,42)+'</span></div>'
     +'<div class="cine-title">Niveau '+lvl+' réussi !</div>'
     +'<div class="cine-stars">'+starsH+'</div>'
     +'<div class="cine-reward">+'+gain+' 🪙</div>'
@@ -1581,8 +1583,8 @@ let sessionStreak=0;
 function loadProfile(){ if(!STORAGE_OK) return; try{const r=localStorage.getItem(PROFILE_KEY); if(r){profile=Object.assign(profile,JSON.parse(r)); if(!Array.isArray(profile.badges)) profile.badges=[];}}catch(e){} }
 function saveProfile(){ if(STORAGE_OK){ try{localStorage.setItem(PROFILE_KEY,JSON.stringify(profile));}catch(e){} } cloudSyncSoon(); }
 function renderHUD(){
-  const a=document.getElementById('hud-avatar'); if(a) a.textContent=profile.avatar||'🧒';
-  const ma=document.getElementById('menu-avatar'); if(ma) ma.textContent=profile.avatar||'🧒';
+  const a=document.getElementById('hud-avatar'); if(a) a.innerHTML=avaHTML(profile.avatar,22);
+  const ma=document.getElementById('menu-avatar'); if(ma) ma.innerHTML=avaHTML(profile.avatar,44);
   const mh=document.getElementById('menu-hello'); if(mh) mh.textContent=(cloud&&cloud.pseudo)?('Salut '+cloud.pseudo+' !'):'Prêt pour l\'aventure ?';
   const c=document.getElementById('hud-coins'); if(c) c.textContent='🪙 '+profile.coins;
   const s=document.getElementById('hud-streak'); if(s){ if(sessionStreak>=2){s.style.display='';s.textContent='🔥 '+sessionStreak;} else s.style.display='none'; }
@@ -1750,7 +1752,7 @@ function renderPodium(rows,tab){
     const r=rows[ri];
     if(!r){ h+='<div class="pod" style="opacity:.25"><div class="pod-top">'+medals[pos]+'</div><div class="pod-ava">·</div><div class="pod-name">—</div><div class="pod-coins">&nbsp;</div><div class="pod-bar" style="height:'+heights[pos]+';background:'+colors[pos]+'"></div></div>'; return; }
     const val = tab==='sprint' ? ('⚡ '+fmtTime(r.sprintMs)) : (tab==='tour' ? ('🗼 '+(r.tower||0)) : (tab==='monster' ? ('👾 '+(r.monster||0)) : ('⭐ '+(r.stars||0))));
-    h+='<div class="pod"><div class="pod-top">'+medals[pos]+'</div><div class="pod-ava">'+(r.avatar||'🧒')+'</div><div class="pod-name">'+escapeHtml(r.pseudo||'?')+'</div><div class="pod-coins">'+val+'</div><div class="pod-bar" style="height:'+heights[pos]+';background:'+colors[pos]+'">'+(ri+1)+'</div></div>';
+    h+='<div class="pod"><div class="pod-top">'+medals[pos]+'</div><div class="pod-ava">'+avaHTML(r.avatar,30)+'</div><div class="pod-name">'+escapeHtml(r.pseudo||'?')+'</div><div class="pod-coins">'+val+'</div><div class="pod-bar" style="height:'+heights[pos]+';background:'+colors[pos]+'">'+(ri+1)+'</div></div>';
   });
   pod.innerHTML=h;
 }
@@ -1792,7 +1794,7 @@ function renderBoard(){
     const val = boardTab==='sprint' ? ('⚡ '+fmtTime(r.sprintMs)) : (boardTab==='tour' ? ('🗼 '+(r.tower||0)) : (boardTab==='monster' ? ('👾 '+(r.monster||0)) : ('⭐ '+(r.stars||0))));
     h+='<div class="rec-row'+(mine?' rec-top':'')+'">'
       +'<span class="rec-rank">'+medal+'</span>'
-      +'<span class="rec-name">'+(r.avatar||'🧒')+' '+escapeHtml(r.pseudo||'?')+(mine?' ⭐':'')+'</span>'
+      +'<span class="rec-name">'+avaHTML(r.avatar,20)+' '+escapeHtml(r.pseudo||'?')+(mine?' ⭐':'')+'</span>'
       +'<span class="rec-time">'+val+'</span>'
       +'</div>';
   });
@@ -1827,13 +1829,17 @@ const AVATARS=[
   {id:'a_genie',emoji:'🧞',name:'Génie',prix:1000},
   {id:'a_crown',emoji:'👑',name:'Roi',prix:1000},
   {id:'a_rocket',emoji:'🚀',name:'Fusée',prix:1000},
-  {id:'op_usopp',emoji:'🤥',name:'Usopp',prix:3000},
-  {id:'op_nami',emoji:'🍊',name:'Nami',prix:4000},
-  {id:'op_chopper',emoji:'🦌',name:'Chopper',prix:5000},
-  {id:'op_sanji',emoji:'🍳',name:'Sanji',prix:6000},
-  {id:'op_zoro',emoji:'⚔️',name:'Zoro',prix:7500},
-  {id:'op_luffy',emoji:'👒',name:'Luffy',prix:10000}
+  {id:'op_usopp',emoji:'op_usopp',img:'avatars/usopp.png',name:'Usopp',prix:3000},
+  {id:'op_nami',emoji:'op_nami',img:'avatars/nami.png',name:'Nami',prix:4000},
+  {id:'op_chopper',emoji:'op_chopper',img:'avatars/chopper.png',name:'Chopper',prix:5000},
+  {id:'op_sanji',emoji:'op_sanji',img:'avatars/sanji.png',name:'Sanji',prix:6000},
+  {id:'op_zoro',emoji:'op_zoro',img:'avatars/zoro.png',name:'Zoro',prix:7500},
+  {id:'op_luffy',emoji:'op_luffy',img:'avatars/luffy.png',name:'Luffy',prix:10000}
 ];
+/* avatars image (One Piece) : token -> fichier. avaHTML/avaSVG affichent une image ou l'emoji */
+const AVA_IMG={}; AVATARS.forEach(function(a){ if(a.img) AVA_IMG[a.emoji]=a.img; });
+function avaHTML(a,px){ a=a||'🧒'; if(AVA_IMG[a]) return '<img class="ava-img" src="'+AVA_IMG[a]+'" style="width:'+px+'px;height:'+px+'px;">'; return a; }
+function avaSVG(a,x,y,size){ a=a||'🧒'; if(AVA_IMG[a]) return '<image href="'+AVA_IMG[a]+'" x="'+(x-size/2)+'" y="'+(y-size/2)+'" width="'+size+'" height="'+size+'"/>'; return '<text x="'+x+'" y="'+(y+size*0.34)+'" font-size="'+size+'" text-anchor="middle">'+a+'</text>'; }
 const THEMES=[
   {id:'default',name:'Bleu',prix:0,accent:'#185FA5',bgAccent:'#E6F1FB',textAccent:'#0C447C'},
   {id:'foret',name:'Forêt',prix:80,accent:'#2E7D32',bgAccent:'#E8F5E9',textAccent:'#1B5E20'},
@@ -1854,7 +1860,7 @@ function renderShop(){
   if(av) av.innerHTML=AVATARS.map(a=>{
     const owned=ownsItem(a.id), sel=(profile.avatar===a.emoji);
     const act = owned ? (sel?'<span class="shop-sel">Choisi ✓</span>':'<span class="shop-choose">Choisir</span>') : ('<span class="shop-price">🪙 '+a.prix+'</span>');
-    return '<div class="shop-item'+(sel?' sel':'')+'" onclick="pickAvatar(\''+a.id+'\')"><div class="shop-emoji">'+a.emoji+'</div><div class="shop-name">'+a.name+'</div>'+act+'</div>';
+    return '<div class="shop-item'+(sel?' sel':'')+'" onclick="pickAvatar(\''+a.id+'\')"><div class="shop-emoji">'+(a.img?'<img class="shop-emoji-img" src="'+a.img+'">':a.emoji)+'</div><div class="shop-name">'+a.name+'</div>'+act+'</div>';
   }).join('');
   const tm=document.getElementById('shop-themes');
   if(tm) tm.innerHTML=THEMES.map(th=>{
@@ -1947,7 +1953,7 @@ function startTour(){
 function renderTourViz(){
   const n=Math.min(tour.floor,7); let bricks='';
   for(let k=0;k<n;k++){ bricks+='<div class="tour-brick'+(k===0?' new':'')+'"></div>'; }
-  const viz=document.getElementById('tour-viz'); if(viz) viz.innerHTML='<div id="tour-hero" class="tour-hop">'+(profile.avatar||'🧒')+'</div>'+bricks;
+  const viz=document.getElementById('tour-viz'); if(viz) viz.innerHTML='<div id="tour-hero" class="tour-hop">'+avaHTML(profile.avatar,30)+'</div>'+bricks;
 }
 function loadTourQuestion(){
   const idx=tourPick(); tour.used.add(idx); const q=shuffleQ(BANK[idx]); tour.current={idx,q};
@@ -2149,7 +2155,7 @@ function subscribeChat(){
       if(!arr.length){ box.innerHTML='<div class="chat-empty">Aucun message. Envoie le premier ! 👇</div>'; return; }
       box.innerHTML=arr.map(function(m){
         const mine=(pseudoKey(m.pseudo||'')===meKey);
-        return '<div class="chat-msg '+(mine?'me':'them')+'">'+(mine?'':'<div class="cm-who">'+(m.avatar||'🧒')+' '+escapeHtml(m.pseudo||'?')+'</div>')+escapeHtml(m.text||'')+'</div>';
+        return '<div class="chat-msg '+(mine?'me':'them')+'">'+(mine?'':'<div class="cm-who">'+avaHTML(m.avatar,16)+' '+escapeHtml(m.pseudo||'?')+'</div>')+escapeHtml(m.text||'')+'</div>';
       }).join('');
       box.scrollTop=box.scrollHeight;
     }, function(){});
@@ -2172,7 +2178,7 @@ function renderOnline(rows){
   const on=rows.filter(function(r){ const s=(r.seen&&r.seen.toMillis)?r.seen.toMillis():0; return s && (now-s)<70000; });
   const others=on.filter(function(r){ return pseudoKey(r.pseudo||'')!==meKey; });
   if(!others.length){ box.innerHTML='<span class="online-dot off"></span> Tu es seul en ligne pour l\'instant.'; return; }
-  box.innerHTML='<span class="online-dot"></span><b>En ligne :</b> '+others.map(function(r){ return (r.avatar||'🧒')+' '+escapeHtml(r.pseudo||'?'); }).join('&nbsp; ·&nbsp; ');
+  box.innerHTML='<span class="online-dot"></span><b>En ligne :</b> '+others.map(function(r){ return avaHTML(r.avatar,16)+' '+escapeHtml(r.pseudo||'?'); }).join('&nbsp; ·&nbsp; ');
 }
 function watchPresence(){
   if(!cloudReady()||!cloud.groupe || presenceUnsub) return;
