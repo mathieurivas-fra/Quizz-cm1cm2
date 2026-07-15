@@ -235,6 +235,9 @@
   #chat-phrases button{font-size:13px;padding:8px 11px;}
   #chat-emojis button{font-size:22px;padding:5px 10px;line-height:1;}
   .board-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  /* présence "en ligne" */
+  .online-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#3ac06a;box-shadow:0 0 0 2px #cdefd7;margin-right:5px;vertical-align:middle;}
+  .online-dot.off{background:#c0c0c0;box-shadow:0 0 0 2px #e5e5e5;}
   /* avatars sur le podium/classement */
   .pod-ava{font-size:30px;line-height:1;}
   /* scénette cinématique de fin de niveau */
@@ -295,6 +298,7 @@
       <span>🪙 <b id="mp-coins">0</b> pièces&nbsp; ·&nbsp; <b id="mp-stars">0</b> ⭐</span>
       <span id="mp-badgecount" style="font-size:12px;color:var(--text-muted);"></span>
     </div>
+    <div id="menu-online" style="display:none;font-size:12.5px;color:var(--text-secondary);margin:-6px 0 14px;padding:8px 12px;background:var(--surface-1);border-radius:10px;line-height:1.5;"></div>
     <div class="game-card" id="card-aventure">
       <div class="game-emoji">🏰</div>
       <div class="game-txt">
@@ -1729,6 +1733,7 @@ function boardJoin(){
   if(g.length<3){ alert('Le code de groupe doit faire au moins 3 caractères (lettres ou chiffres).'); return; }
   cloud.pseudo=p; cloud.groupe=g; saveCloud();
   cloudSync();
+  resetPresence(); startPresence();
   document.getElementById('board-setup').style.display='none';
   document.getElementById('board-main').style.display='block';
   loadLeaderboard();
@@ -1821,7 +1826,13 @@ const AVATARS=[
   {id:'a_eagle',emoji:'🦅',name:'Aigle',prix:750},
   {id:'a_genie',emoji:'🧞',name:'Génie',prix:1000},
   {id:'a_crown',emoji:'👑',name:'Roi',prix:1000},
-  {id:'a_rocket',emoji:'🚀',name:'Fusée',prix:1000}
+  {id:'a_rocket',emoji:'🚀',name:'Fusée',prix:1000},
+  {id:'op_usopp',emoji:'🤥',name:'Usopp',prix:3000},
+  {id:'op_nami',emoji:'🍊',name:'Nami',prix:4000},
+  {id:'op_chopper',emoji:'🦌',name:'Chopper',prix:5000},
+  {id:'op_sanji',emoji:'🍳',name:'Sanji',prix:6000},
+  {id:'op_zoro',emoji:'⚔️',name:'Zoro',prix:7500},
+  {id:'op_luffy',emoji:'👒',name:'Luffy',prix:10000}
 ];
 const THEMES=[
   {id:'default',name:'Bleu',prix:0,accent:'#185FA5',bgAccent:'#E6F1FB',textAccent:'#0C447C'},
@@ -2144,6 +2155,38 @@ function subscribeChat(){
     }, function(){});
 }
 
+/* ================= PRÉSENCE "EN LIGNE" (heartbeat Firestore) ================= */
+let presenceUnsub=null, heartbeatTimer=null;
+function beatPresence(){
+  if(!cloudReady()||!cloud.pseudo||!cloud.groupe) return;
+  db.collection('groupes').doc(cloud.groupe).collection('presence').doc(pseudoKey(cloud.pseudo)).set({
+    pseudo:cloud.pseudo.slice(0,16), avatar:(profile.avatar||'🧒').slice(0,12),
+    seen:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true}).catch(function(){});
+}
+function renderOnline(rows){
+  const box=document.getElementById('menu-online'); if(!box) return;
+  if(!cloud.groupe){ box.style.display='none'; return; }
+  box.style.display='block';
+  const now=Date.now(), meKey=pseudoKey(cloud.pseudo);
+  const on=rows.filter(function(r){ const s=(r.seen&&r.seen.toMillis)?r.seen.toMillis():0; return s && (now-s)<70000; });
+  const others=on.filter(function(r){ return pseudoKey(r.pseudo||'')!==meKey; });
+  if(!others.length){ box.innerHTML='<span class="online-dot off"></span> Tu es seul en ligne pour l\'instant.'; return; }
+  box.innerHTML='<span class="online-dot"></span><b>En ligne :</b> '+others.map(function(r){ return (r.avatar||'🧒')+' '+escapeHtml(r.pseudo||'?'); }).join('&nbsp; ·&nbsp; ');
+}
+function watchPresence(){
+  if(!cloudReady()||!cloud.groupe || presenceUnsub) return;
+  presenceUnsub=db.collection('groupes').doc(cloud.groupe).collection('presence')
+    .onSnapshot(function(snap){ const rows=[]; snap.forEach(function(d){ rows.push(d.data()); }); renderOnline(rows); }, function(){});
+}
+function startPresence(){
+  if(!cloudReady()||!cloud.pseudo||!cloud.groupe) return;
+  beatPresence();
+  if(!heartbeatTimer) heartbeatTimer=setInterval(beatPresence,30000);
+  watchPresence();
+}
+function resetPresence(){ if(presenceUnsub){ try{ presenceUnsub(); }catch(e){} presenceUnsub=null; } }
+
 function saveProgress(){
   if(!STORAGE_OK) return;
   try{
@@ -2331,6 +2374,7 @@ try{
   var _desc=document.querySelector('#card-aventure .game-desc');
   if(_desc) _desc.textContent='20 niveaux, '+subjects.length+' matières, un boss à vaincre pour devenir Roi du royaume.';
   show('screen-menu');
+  startPresence();
 }catch(e){
   var d=document.createElement('div');
   d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#791F1F;color:#fff;padding:12px;font:13px -apple-system,sans-serif;';
